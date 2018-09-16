@@ -1,0 +1,18 @@
+{
+    "cppFile": "src/qtbindings.cpp",
+    "rust": {
+        "interfaceModule": "qtbindings",
+        "implementationModule": "gui"
+    },
+    "objects": {
+        "Simple": {
+            "type": "Object",
+            "properties": {
+                "message": {
+                    "type": "QString",
+                    "write": true
+                }
+            }
+        }
+    }
+}
