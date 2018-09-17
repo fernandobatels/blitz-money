@@ -13,7 +13,7 @@ Inspirada no KMyMoney esta aplicação usa um arquivo de texto para a persistên
 Build this code with:
 
 ```bash
-rust_qt_binding_generator src/bindings.json
+rust_qt_binding_generator bindings.json
 mkdir build
 cd build
 cmake ..

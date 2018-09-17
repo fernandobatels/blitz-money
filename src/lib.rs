@@ -1,5 +1,5 @@
 
 extern crate libc;
 
-pub mod qtbindings;
-mod gui;
+pub mod qtbindingsinterface;
+mod qtbindingsimplementation;

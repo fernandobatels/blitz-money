@@ -1,0 +1,29 @@
+{
+    "cppFile": "src/qtbindings.cpp",
+    "rust": {
+        "interfaceModule": "qtbindingsinterface",
+        "implementationModule": "qtbindingsimplementation"
+    },
+    "objects": {
+        "Accounts": {
+            "type": "List",
+            "itemProperties": {
+                "id": {
+                    "type": "qint32",
+                    "write": true,
+                    "roles": [ [ "display" ] ]
+                },
+                "name": {
+                    "type": "QString",
+                    "write": true,
+                    "roles": [[], [ "display" ] ]
+                },
+                "bank": {
+                    "type": "QString",
+                    "write": true,
+                    "roles": [[],[], [ "display" ] ]
+                }
+            }
+        }
+    }
+}
