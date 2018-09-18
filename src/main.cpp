@@ -18,13 +18,18 @@
 int main(int argc, char* argv[]) {
 
     QGuiApplication app(argc, argv);
-//    qmlRegisterType<Simple>("RustCode", 1, 0, "Simple");
+    //qmlRegisterType<Accounts>("BlitzMoney", 1, 0, "Accounts");
 
     QQmlApplicationEngine engine;
     engine.load(QUrl(QStringLiteral("qrc:/MainWindow.ui.qml")));
 
     if (engine.rootObjects().isEmpty())
         return -1;
+
+    QQmlContext *context = engine.rootContext();
+
+    context->setContextProperty("sourceAccounts", new Accounts());
+
 
     return app.exec();
 }

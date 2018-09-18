@@ -18,10 +18,15 @@ pub struct Accounts {
 
 impl AccountsTrait for Accounts {
     fn new(emit: AccountsEmitter, model: AccountsList) -> Accounts {
-        Accounts {
+        let mut ac = Accounts {
             emit: emit,
             model: model,
-        }
+            list: [].to_vec()
+        };
+
+        ac.list.push(AccountsItem{ bank: "BB".to_string(), id: 10, name: "Conta corrente".to_string()});
+
+        ac
     }
     fn emit(&self) -> &AccountsEmitter {
         &self.emit

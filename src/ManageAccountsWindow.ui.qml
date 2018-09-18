@@ -19,10 +19,6 @@ ApplicationWindow {
         }
     }
 
-    Simple {
-        id: rust
-    }
-
     TableView {
         anchors.fill: parent
         model: sourceAccounts
