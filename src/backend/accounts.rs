@@ -1,10 +1,10 @@
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-#![allow(dead_code)]
-use qtbindingsinterface::*;
+
+use qtbindingsinterface::AccountsList;
+use qtbindingsinterface::AccountsEmitter;
+use qtbindingsinterface::AccountsTrait;
 
 #[derive(Default, Clone)]
-struct AccountsItem {
+struct Account {
     bank: String,
     id: i32,
     name: String,
@@ -13,7 +13,7 @@ struct AccountsItem {
 pub struct Accounts {
     emit: AccountsEmitter,
     model: AccountsList,
-    list: Vec<AccountsItem>,
+    list: Vec<Account>,
 }
 
 impl AccountsTrait for Accounts {
@@ -23,9 +23,7 @@ impl AccountsTrait for Accounts {
             model: model,
             list: [].to_vec()
         };
-
-        ac.list.push(AccountsItem{ bank: "BB".to_string(), id: 10, name: "Conta corrente".to_string()});
-
+        ac.list.push(Account{ bank: "BB".to_string(), id: 10, name: "Conta corrente".to_string()});
         ac
     }
     fn emit(&self) -> &AccountsEmitter {
@@ -56,4 +54,3 @@ impl AccountsTrait for Accounts {
         true
     }
 }
-

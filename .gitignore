@@ -2,4 +2,3 @@ build
 cmake
 target
 *.swp
-src/qtbindings*

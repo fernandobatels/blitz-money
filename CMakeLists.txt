@@ -43,15 +43,15 @@ add_custom_command(
   OUTPUT "${RUST_LIB}"
   COMMAND ${Cargo_EXECUTABLE} build ${RUST_BUILD_FLAG}
   DEPENDS src/lib.rs
+          src/backend/accounts.rs
           src/qtbindingsinterface.rs
-          src/qtbindingsimplementation.rs
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 add_custom_target(rust_target DEPENDS "${RUST_LIB}")
 
 list(APPEND Libs "${RUST_LIB}")
 list(APPEND Libs Qt5::Core Qt5::Quick Threads::Threads ${CMAKE_DL_LIBS})
-set(SRCS src/main.cpp src/qtbindings.cpp "src/qml.qrc")
+set(SRCS src/main.cpp src/qtbindings.cpp "src/ui/qml.qrc")
 add_executable(bmoney ${SRCS})
 add_dependencies(bmoney rust_target)
 target_link_libraries(bmoney ${Libs})

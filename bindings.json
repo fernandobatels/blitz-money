@@ -11,17 +11,17 @@
                 "id": {
                     "type": "qint32",
                     "write": true,
-                    "roles": [ [ "display" ] ]
+                    "roles": [ [ "display", "edit" ] ]
                 },
                 "name": {
                     "type": "QString",
                     "write": true,
-                    "roles": [[], [ "display" ] ]
+                    "roles": [[], [ "display", "edit" ] ]
                 },
                 "bank": {
                     "type": "QString",
                     "write": true,
-                    "roles": [[],[], [ "display" ] ]
+                    "roles": [[],[], [ "display", "edit" ] ]
                 }
             }
         }
