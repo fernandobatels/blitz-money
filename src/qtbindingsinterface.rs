@@ -8,8 +8,7 @@ use std::char::decode_utf16;
 use std::sync::{Arc, Mutex};
 use std::ptr::null;
 
-use qtbindingsimplementation::*;
-
+use backend::accounts::*;
 
 #[repr(C)]
 pub struct COption<T> {

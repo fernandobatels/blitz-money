@@ -1,4 +1,3 @@
-
 use qtbindingsinterface::AccountsList;
 use qtbindingsinterface::AccountsEmitter;
 use qtbindingsinterface::AccountsTrait;
@@ -12,6 +11,7 @@ struct Account {
 
 pub struct Accounts {
     emit: AccountsEmitter,
+    #[allow(dead_code)]
     model: AccountsList,
     list: Vec<Account>,
 }

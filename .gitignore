@@ -2,3 +2,4 @@ build
 cmake
 target
 *.swp
+src/qtbindingsimplementation.rs
