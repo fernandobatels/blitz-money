@@ -9,6 +9,7 @@
 use qtbindingsinterface::AccountsList;
 use qtbindingsinterface::AccountsEmitter;
 use qtbindingsinterface::AccountsTrait;
+use backend::storage::LOCKED_STORAGE;
 
 #[derive(Default, Clone)]
 struct Account {
@@ -28,16 +29,16 @@ impl AccountsTrait for Accounts {
 
     fn new(emit: AccountsEmitter, model: AccountsList) -> Accounts {
 
-        let storage = super::storage::get_instance();
-
-        storage.start_session();
+        LOCKED_STORAGE.lock().unwrap().start_section("accounts".to_string());
 
         let mut ac = Accounts {
             emit: emit,
             model: model,
             list: [].to_vec()
         };
+
         ac.list.push(Account{ bank: "BB".to_string(), id: 10, name: "Conta corrente".to_string()});
+
         ac
     }
 
