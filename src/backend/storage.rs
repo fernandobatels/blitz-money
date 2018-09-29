@@ -8,7 +8,7 @@
 
 use std::error::Error;
 use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::option::Option;
 use std::sync::Mutex;
@@ -50,16 +50,27 @@ impl Storage {
             .read(true)
             .write(true)
             .create(true)
+            .append(true)
             .open(path)
         {
-            Err(e) => panic!("Couldn't create the storage file at {}", e.description()),
             Ok(file) => Some(file),
+            Err(e) => panic!("Couldn't create the storage file at {}", e.description()),
         };
     }
 
     // Creates a section of data into storage, if does not alread exists
-    pub fn start_section(&self, name: String) -> bool {
-        if !self.check_section(name) {
+    pub fn start_section(&mut self, name: String) -> bool {
+
+        if !self.check_section(name.clone()) {
+
+            let mut file = match &self.file {
+                Some(file) => file,
+                None => panic!("File of storage not opened")
+            };
+
+            file.write_fmt(format_args!("::section::{}\n", name))
+                .expect("Couldn't create the section on storage file");
+
         }
 
         true
@@ -74,10 +85,12 @@ impl Storage {
         };
 
         for line in BufReader::new(file).lines() {
-            println!("{}{:?}", name, line);
+            if line.unwrap() == format!("::section::{}", name) {
+                return true;
+            }
         }
 
-        true
+        false
     }
 }
 
@@ -89,14 +102,14 @@ mod tests {
 
     #[test]
     fn check_section() {
-        let mut st = Storage { path_str: "/tmp/tscs", file: None };
+        let mut st = Storage { path_str: "/tmp/tscs".to_string(), file: None };
         st.init();
         assert!(!st.check_section("accounts".to_string()));
     }
 
     #[test]
     fn start_section() {
-        let mut st = Storage { path_str: "/tmp/tssc", file: None };
+        let mut st = Storage { path_str: "/tmp/tssc".to_string(), file: None };
         st.init();
         assert!(st.start_section("accounts".to_string()));
     }
