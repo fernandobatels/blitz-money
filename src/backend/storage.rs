@@ -12,16 +12,32 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::option::Option;
 use std::sync::Mutex;
+use json::{ parse, JsonValue};
 
+// Representation of storage
 pub struct Storage {
     path_str: String,
     file: Option<File>
+}
+
+// Representation of section data
+pub struct Data<'a> {
+    section: String,
+    storage: &'a Storage
+}
+
+pub trait Model {
+
+    // For set data into struct
+    fn new(row: JsonValue) -> Self;
 }
 
 //
 // Storage of bliz money is based in a single file. To
 // ensure the integrity of data we need to centralize the
 // access to file.
+//
+// More informations about the file storage into example.bms
 //
 lazy_static! {
     pub static ref LOCKED_STORAGE: Mutex<Storage> = Mutex::new(start_storage());
@@ -92,8 +108,26 @@ impl Storage {
 
         false
     }
+
+    // Return struct for read the data of the section
+    pub fn get_section_data(&self, name: String) -> Data {
+        Data { section: name, storage: self }
+    }
 }
 
+impl<'a> Data<'a> {
+
+    // Return the next row of values into a struct filled
+    pub fn get_next<M: Model>(self) -> M {
+
+        let row = match parse(r#"{"bank":"BB","id":15,"name":"Conta corrente????????"}"#) {
+            Ok(row) => row,
+            Err(e) => panic!("Couldn't parse the row: {}", e.description())
+        };
+
+        M::new(row)
+    }
+}
 
 #[cfg(test)]
 mod tests {

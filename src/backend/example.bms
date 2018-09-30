@@ -1,0 +1,9 @@
+This is a example of bms(blitz money storage) file and is not valid for use by blitz money.
+
+The storage system of this application is based into a file with sections and lines of json contents. Example:
+
+::section::accounts
+{"name":"My accont", "id": 15, "bank":"BB"}
+
+A section ends on the next start or if the file ends. Only json content in lines is allowed inside a sections. Before
+a fisrt section, any content is allowed like comments or descriptions.

@@ -9,13 +9,34 @@
 use qtbindingsinterface::AccountsList;
 use qtbindingsinterface::AccountsEmitter;
 use qtbindingsinterface::AccountsTrait;
-use backend::storage::LOCKED_STORAGE;
+use backend::storage::{LOCKED_STORAGE, Model};
+use json::JsonValue;
 
 #[derive(Default, Clone)]
 struct Account {
     bank: String,
     id: i32,
     name: String,
+}
+
+impl Model for Account {
+
+    fn new(row: JsonValue) -> Account {
+
+        if row["id"].is_null() {
+            panic!("Id not found into a row account");
+        }
+
+        if row["bank"].is_null() {
+            panic!("Bank name not found into a row(id {}) account", row["id"]);
+        }
+
+        if row["name"].is_null() {
+            panic!("Name not found into a row(id {}) account", row["id"]);
+        }
+
+        Account{ bank: row["bank"].to_string(), id: row["id"].as_i32().unwrap(), name: row["name"].to_string() }
+    }
 }
 
 pub struct Accounts {
@@ -29,7 +50,10 @@ impl AccountsTrait for Accounts {
 
     fn new(emit: AccountsEmitter, model: AccountsList) -> Accounts {
 
-        LOCKED_STORAGE.lock().unwrap().start_section("accounts".to_string());
+        let mut storage = LOCKED_STORAGE.lock().unwrap();
+        storage.start_section("accounts".to_string());
+
+        let data = storage.get_section_data("accounts".to_string());
 
         let mut ac = Accounts {
             emit: emit,
@@ -37,7 +61,9 @@ impl AccountsTrait for Accounts {
             list: [].to_vec()
         };
 
-        ac.list.push(Account{ bank: "BB".to_string(), id: 10, name: "Conta corrente".to_string()});
+        let accc = data.get_next::<Account>();
+
+        ac.list.push(accc);
 
         ac
     }

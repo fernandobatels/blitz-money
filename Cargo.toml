@@ -6,6 +6,7 @@ version = "1.0.0"
 [dependencies]
 libc = "*"
 lazy_static = "1.1.0"
+json = "*"
 
 [lib]
 name = "rust"
