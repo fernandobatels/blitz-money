@@ -1,4 +1,4 @@
-# Blitz Money - Blitz Money - Application for personal financial control
+# Blitz Money - Application for personal financial control
 
 Inspired on KMyMoney, this application uses on single text file to persist the data, allow OFX files import and can register the future moves on google calendar for notify you.
 
