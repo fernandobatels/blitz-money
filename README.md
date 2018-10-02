@@ -1,14 +1,16 @@
-# Blitz Money - Aplicação para controle financeiro pessoal
+# Blitz Money - Blitz Money - Application for personal financial control
 
-Inspirada no KMyMoney esta aplicação usa um arquivo de texto para a persistência dos dados e baseia-se na importação de arquivos OFX.
+Inspired on KMyMoney, this application uses on single text file to persist the data, allow OFX files import and can register the future moves on google calendar for notify you.
 
-### Funcionalidades
+### Features
 
-- [ ] Controle de contas bancárias
-- [ ] Movimentação financeira
-- [ ] Importação de arquivos OFX
-- [ ] Integração com o Google Agenda(para notificação sobre os lançamentos agendados)
-- [ ] Indentificação padronizada de contatos, contas, categorias... ao importar arquivos OFX
+- [ ] Manage Accounts
+- [ ] Financial movimentation
+- [ ] OFX import
+- [ ] Google Calendar integration
+- [ ] Padronization of imported fields(contacts, tags...)
+- [ ] Reports
+- [ ] Simulations
 
 Build this code with:
 
