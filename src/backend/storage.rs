@@ -7,23 +7,26 @@
 ///
 
 use std::error::Error;
-use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::fs::{ File, OpenOptions };
+use std::io::{ Read, Write };
 use std::path::Path;
 use std::option::Option;
 use std::sync::Mutex;
-use json::{ parse, JsonValue};
+use json::{ parse, JsonValue };
 
 // Representation of storage
 pub struct Storage {
     path_str: String,
-    file: Option<File>
+    file: Option<File>,
+    lines: Vec<String>,
+    last_position_section: String,
+    last_position: usize
 }
 
 // Representation of section data
 pub struct Data<'a> {
     section: String,
-    storage: &'a Storage
+    storage: &'a mut Storage
 }
 
 pub trait Model {
@@ -40,68 +43,73 @@ pub trait Model {
 // More informations about the file storage into example.bms
 //
 lazy_static! {
-    pub static ref LOCKED_STORAGE: Mutex<Storage> = Mutex::new(start_storage());
-}
-
-//
-// Start the Storage struct for locked storage
-//
-fn start_storage() -> Storage {
-
-    let mut st = Storage { path_str: "/tmp/bmoneytmp.bms".to_string(), file: None };
-
-    st.init();
-
-    st
+    pub static ref LOCKED_STORAGE: Mutex<Storage> = Mutex::new(Storage { path_str: "/tmp/bmoneytmp.bms".to_string(), file: None, lines: Vec::new(), last_position_section: "".to_string(), last_position: 0 });
 }
 
 impl Storage {
 
-    // Create a file for store all data, if does not alred exists
-    fn init(&mut self) {
+    // Open, or reopen, the file for storage. Create a file for store all data, if does not alred exists
+    fn reopen_file(&mut self) {
 
         let path = Path::new(&self.path_str);
 
-        self.file = match OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .append(true)
-            .open(path)
-        {
-            Ok(file) => Some(file),
-            Err(e) => panic!("Couldn't create the storage file at {}", e.description()),
-        };
+        // Open, or create, the file
+        if self.file.is_none() {
+
+            self.file = match OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create(true)
+                .append(true)
+                .open(path)
+            {
+                Ok(file) => Some(file),
+                Err(e) => panic!("Couldn't create/open the storage file at {}", e.description()),
+            };
+
+            // Read lines from file
+            let mut buff = String::new();
+            if self.file.take().unwrap().read_to_string(&mut buff).is_err() {
+                panic!("Couldn't read lines of the storage file");
+            }
+
+            self.lines = Vec::new();
+            for line in buff.lines() {
+                self.lines.push(line.to_string());
+            }
+        }
     }
 
     // Creates a section of data into storage, if does not alread exists
     pub fn start_section(&mut self, name: String) -> bool {
 
+        let mut has_write = false;
+
         if !self.check_section(name.clone()) {
 
-            let mut file = match &self.file {
-                Some(file) => file,
-                None => panic!("File of storage not opened")
-            };
+            self.reopen_file();
 
-            file.write_fmt(format_args!("::section::{}\n", name))
+            self.file.take().unwrap().write_fmt(format_args!("::section::{}\n", name))
                 .expect("Couldn't create the section on storage file");
 
+            has_write = true;
+        }
+
+        if has_write {
+            // Force reopen the file on next read
+            self.file = None;
         }
 
         true
     }
 
     // Check if section exists
-    pub fn check_section(&self, name: String) -> bool {
+    pub fn check_section(&mut self, name: String) -> bool {
 
-        let file = match &self.file {
-            Some(file) => file,
-            None => panic!("File of storage not opened")
-        };
+        self.reopen_file();
 
-        for line in BufReader::new(file).lines() {
-            if line.unwrap() == format!("::section::{}", name) {
+        for line in self.lines.clone() {
+            if line == format!("::section::{}", name) {
                 return true;
             }
         }
@@ -110,22 +118,54 @@ impl Storage {
     }
 
     // Return struct for read the data of the section
-    pub fn get_section_data(&self, name: String) -> Data {
+    pub fn get_section_data(&mut self, name: String) -> Data {
         Data { section: name, storage: self }
     }
 }
 
 impl<'a> Data<'a> {
 
+    // Find and adjust the value of position of section
+    fn find_section(&mut self) {
+
+        if self.storage.last_position_section != self.section {
+            // when other section use the buffer we need
+            // reset the count of rows of the section
+
+            for (i, line) in self.storage.lines.iter().enumerate() {
+                if line.to_owned() == format!("::section::{}", self.section) {
+                    self.storage.last_position = i;
+                    break;
+                }
+            }
+        }
+    }
+
     // Return the next row of values into a struct filled
-    pub fn get_next<M: Model>(self) -> M {
+    pub fn next<M: Model>(&mut self) -> Result<M, &'static str> {
 
-        let row = match parse(r#"{"bank":"BB","id":15,"name":"Conta corrente????????"}"#) {
-            Ok(row) => row,
-            Err(e) => panic!("Couldn't parse the row: {}", e.description())
-        };
+        self.storage.reopen_file();
 
-        M::new(row)
+        self.find_section();
+
+        self.storage.last_position = self.storage.last_position + 1;
+
+        if self.storage.last_position < self.storage.lines.len() {
+
+            let linestr = &self.storage.lines[self.storage.last_position].trim();
+
+            if !linestr.is_empty() {
+
+                let row = match parse(&linestr) {
+                    Ok(row) => row,
+                    Err(e) => panic!("Couldn't parse the row: {}", e.description())
+                };
+
+                return Ok(M::new(row));
+            }
+        }
+
+        Err("Next row not found")
     }
 }
 

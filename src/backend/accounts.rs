@@ -53,7 +53,7 @@ impl AccountsTrait for Accounts {
         let mut storage = LOCKED_STORAGE.lock().unwrap();
         storage.start_section("accounts".to_string());
 
-        let data = storage.get_section_data("accounts".to_string());
+        let mut data = storage.get_section_data("accounts".to_string());
 
         let mut ac = Accounts {
             emit: emit,
@@ -61,9 +61,9 @@ impl AccountsTrait for Accounts {
             list: [].to_vec()
         };
 
-        let accc = data.get_next::<Account>();
-
-        ac.list.push(accc);
+        if let Ok(line) = data.next::<Account>() {
+            ac.list.push(line);
+        }
 
         ac
     }
