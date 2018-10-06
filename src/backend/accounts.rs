@@ -61,7 +61,7 @@ impl AccountsTrait for Accounts {
             list: [].to_vec()
         };
 
-        if let Ok(line) = data.next::<Account>() {
+        while let Ok(line) = data.next::<Account>() {
             ac.list.push(line);
         }
 

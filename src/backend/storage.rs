@@ -19,14 +19,14 @@ pub struct Storage {
     path_str: String,
     file: Option<File>,
     lines: Vec<String>,
-    last_position_section: String,
-    last_position: usize
 }
 
 // Representation of section data
 pub struct Data<'a> {
     section: String,
-    storage: &'a mut Storage
+    storage: &'a mut Storage,
+    need_find_section: bool,
+    last_position: usize
 }
 
 pub trait Model {
@@ -43,7 +43,7 @@ pub trait Model {
 // More informations about the file storage into example.bms
 //
 lazy_static! {
-    pub static ref LOCKED_STORAGE: Mutex<Storage> = Mutex::new(Storage { path_str: "/tmp/bmoneytmp.bms".to_string(), file: None, lines: Vec::new(), last_position_section: "".to_string(), last_position: 0 });
+    pub static ref LOCKED_STORAGE: Mutex<Storage> = Mutex::new(Storage { path_str: "/tmp/bmoneytmp.bms".to_string(), file: None, lines: Vec::new() });
 }
 
 impl Storage {
@@ -69,7 +69,7 @@ impl Storage {
 
             // Read lines from file
             let mut buff = String::new();
-            if self.file.take().unwrap().read_to_string(&mut buff).is_err() {
+            if self.file.as_ref().unwrap().read_to_string(&mut buff).is_err() {
                 panic!("Couldn't read lines of the storage file");
             }
 
@@ -89,7 +89,7 @@ impl Storage {
 
             self.reopen_file();
 
-            self.file.take().unwrap().write_fmt(format_args!("::section::{}\n", name))
+            self.file.as_ref().unwrap().write_fmt(format_args!("::section::{}\n", name))
                 .expect("Couldn't create the section on storage file");
 
             has_write = true;
@@ -119,7 +119,7 @@ impl Storage {
 
     // Return struct for read the data of the section
     pub fn get_section_data(&mut self, name: String) -> Data {
-        Data { section: name, storage: self }
+        Data { section: name, storage: self, last_position: 0, need_find_section: true }
     }
 }
 
@@ -128,13 +128,15 @@ impl<'a> Data<'a> {
     // Find and adjust the value of position of section
     fn find_section(&mut self) {
 
-        if self.storage.last_position_section != self.section {
+        if self.need_find_section {
             // when other section use the buffer we need
             // reset the count of rows of the section
 
+            self.need_find_section = false;
+
             for (i, line) in self.storage.lines.iter().enumerate() {
                 if line.to_owned() == format!("::section::{}", self.section) {
-                    self.storage.last_position = i;
+                    self.last_position = i.clone();
                     break;
                 }
             }
@@ -148,11 +150,11 @@ impl<'a> Data<'a> {
 
         self.find_section();
 
-        self.storage.last_position = self.storage.last_position + 1;
+        self.last_position = (self.last_position + 1).to_owned();
 
-        if self.storage.last_position < self.storage.lines.len() {
+        if self.last_position.to_owned() < self.storage.lines.len() {
 
-            let linestr = &self.storage.lines[self.storage.last_position].trim();
+            let linestr = &self.storage.lines[self.last_position.to_owned()].trim();
 
             if !linestr.is_empty() {
 
@@ -176,15 +178,13 @@ mod tests {
 
     #[test]
     fn check_section() {
-        let mut st = Storage { path_str: "/tmp/tscs".to_string(), file: None };
-        st.init();
+        let mut st = Storage { path_str: "/tmp/tscs".to_string(), file: None, lines: Vec::new() };
         assert!(!st.check_section("accounts".to_string()));
     }
 
     #[test]
     fn start_section() {
-        let mut st = Storage { path_str: "/tmp/tssc".to_string(), file: None };
-        st.init();
+        let mut st = Storage { path_str: "/tmp/tssc".to_string(), file: None, lines: Vec::new() };
         assert!(st.start_section("accounts".to_string()));
     }
 }
