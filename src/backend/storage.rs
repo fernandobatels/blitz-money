@@ -13,6 +13,7 @@ use std::path::Path;
 use std::option::Option;
 use std::sync::Mutex;
 use json::{ parse, JsonValue };
+use uuid::Uuid;
 
 // Representation of storage
 pub struct Storage {
@@ -32,7 +33,7 @@ pub struct Data<'a> {
 pub trait Model {
 
     // For set data into struct
-    fn new(row: JsonValue) -> Self;
+    fn new(row: JsonValue, uuid: String) -> Self;
 }
 
 //
@@ -158,12 +159,15 @@ impl<'a> Data<'a> {
 
             if !linestr.is_empty() {
 
-                let row = match parse(&linestr) {
+                let uuid = linestr.chars().take(36).collect();
+                let json = linestr.chars().skip(37).collect::<String>();
+
+                let row = match parse(&json) {
                     Ok(row) => row,
                     Err(e) => panic!("Couldn't parse the row: {}", e.description())
                 };
 
-                return Ok(M::new(row));
+                return Ok(M::new(row, uuid));
             }
         }
 

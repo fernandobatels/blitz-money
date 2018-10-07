@@ -14,6 +14,7 @@ use json::JsonValue;
 
 #[derive(Default, Clone)]
 struct Account {
+    uuid: String,
     bank: String,
     id: i32,
     name: String,
@@ -21,7 +22,7 @@ struct Account {
 
 impl Model for Account {
 
-    fn new(row: JsonValue) -> Account {
+    fn new(row: JsonValue, uuid: String) -> Account {
 
         if row["id"].is_null() {
             panic!("Id not found into a row account");
@@ -35,7 +36,7 @@ impl Model for Account {
             panic!("Name not found into a row(id {}) account", row["id"]);
         }
 
-        Account{ bank: row["bank"].to_string(), id: row["id"].as_i32().unwrap(), name: row["name"].to_string() }
+        Account{ uuid: uuid, bank: row["bank"].to_string(), id: row["id"].as_i32().unwrap(), name: row["name"].to_string() }
     }
 }
 
