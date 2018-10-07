@@ -32,10 +32,10 @@ namespace {
 extern "C" {
     void accounts_data_bank(const Accounts::Private*, int, QString*, qstring_set);
     bool accounts_set_data_bank(Accounts::Private*, int, const ushort* s, int len);
-    qint32 accounts_data_id(const Accounts::Private*, int);
-    bool accounts_set_data_id(Accounts::Private*, int, qint32);
     void accounts_data_name(const Accounts::Private*, int, QString*, qstring_set);
     bool accounts_set_data_name(Accounts::Private*, int, const ushort* s, int len);
+    void accounts_data_uuid(const Accounts::Private*, int, QString*, qstring_set);
+    bool accounts_set_data_uuid(Accounts::Private*, int, const ushort* s, int len);
     void accounts_sort(Accounts::Private*, unsigned char column, Qt::SortOrder order = Qt::AscendingOrder);
 
     int accounts_row_count(const Accounts::Private*);
@@ -132,22 +132,6 @@ bool Accounts::setBank(int row, const QString& value)
     return set;
 }
 
-qint32 Accounts::id(int row) const
-{
-    return accounts_data_id(m_d, row);
-}
-
-bool Accounts::setId(int row, qint32 value)
-{
-    bool set = false;
-    set = accounts_set_data_id(m_d, row, value);
-    if (set) {
-        QModelIndex index = createIndex(row, 0, row);
-        emit dataChanged(index, index);
-    }
-    return set;
-}
-
 QString Accounts::name(int row) const
 {
     QString s;
@@ -166,6 +150,24 @@ bool Accounts::setName(int row, const QString& value)
     return set;
 }
 
+QString Accounts::uuid(int row) const
+{
+    QString s;
+    accounts_data_uuid(m_d, row, &s, set_qstring);
+    return s;
+}
+
+bool Accounts::setUuid(int row, const QString& value)
+{
+    bool set = false;
+    set = accounts_set_data_uuid(m_d, row, value.utf16(), value.length());
+    if (set) {
+        QModelIndex index = createIndex(row, 0, row);
+        emit dataChanged(index, index);
+    }
+    return set;
+}
+
 QVariant Accounts::data(const QModelIndex &index, int role) const
 {
     Q_ASSERT(rowCount(index.parent()) > index.row());
@@ -174,19 +176,19 @@ QVariant Accounts::data(const QModelIndex &index, int role) const
         switch (role) {
         case Qt::UserRole + 0:
             return QVariant::fromValue(bank(index.row()));
+        case Qt::UserRole + 1:
+            return QVariant::fromValue(name(index.row()));
         case Qt::DisplayRole:
         case Qt::EditRole:
-        case Qt::UserRole + 1:
-            return QVariant::fromValue(id(index.row()));
         case Qt::UserRole + 2:
-            return QVariant::fromValue(name(index.row()));
+            return QVariant::fromValue(uuid(index.row()));
         }
         break;
     case 1:
         switch (role) {
         case Qt::DisplayRole:
         case Qt::EditRole:
-        case Qt::UserRole + 2:
+        case Qt::UserRole + 1:
             return QVariant::fromValue(name(index.row()));
         }
         break;
@@ -216,8 +218,8 @@ int Accounts::role(const char* name) const {
 QHash<int, QByteArray> Accounts::roleNames() const {
     QHash<int, QByteArray> names = QAbstractItemModel::roleNames();
     names.insert(Qt::UserRole + 0, "bank");
-    names.insert(Qt::UserRole + 1, "id");
-    names.insert(Qt::UserRole + 2, "name");
+    names.insert(Qt::UserRole + 1, "name");
+    names.insert(Qt::UserRole + 2, "uuid");
     return names;
 }
 QVariant Accounts::headerData(int section, Qt::Orientation orientation, int role) const
@@ -245,19 +247,19 @@ bool Accounts::setData(const QModelIndex &index, const QVariant &value, int role
                 return setBank(index.row(), value.value<QString>());
             }
         }
-        if (role == Qt::DisplayRole || role == Qt::EditRole || role == Qt::UserRole + 1) {
-            if (value.canConvert(qMetaTypeId<qint32>())) {
-                return setId(index.row(), value.value<qint32>());
-            }
-        }
-        if (role == Qt::UserRole + 2) {
+        if (role == Qt::UserRole + 1) {
             if (value.canConvert(qMetaTypeId<QString>())) {
                 return setName(index.row(), value.value<QString>());
             }
         }
+        if (role == Qt::DisplayRole || role == Qt::EditRole || role == Qt::UserRole + 2) {
+            if (value.canConvert(qMetaTypeId<QString>())) {
+                return setUuid(index.row(), value.value<QString>());
+            }
+        }
     }
     if (index.column() == 1) {
-        if (role == Qt::DisplayRole || role == Qt::EditRole || role == Qt::UserRole + 2) {
+        if (role == Qt::DisplayRole || role == Qt::EditRole || role == Qt::UserRole + 1) {
             if (value.canConvert(qMetaTypeId<QString>())) {
                 return setName(index.row(), value.value<QString>());
             }
@@ -354,7 +356,7 @@ Accounts::~Accounts() {
     }
 }
 void Accounts::initHeaderData() {
-    m_headerData.insert(qMakePair(0, Qt::DisplayRole), QVariant("id"));
+    m_headerData.insert(qMakePair(0, Qt::DisplayRole), QVariant("uuid"));
     m_headerData.insert(qMakePair(1, Qt::DisplayRole), QVariant("name"));
     m_headerData.insert(qMakePair(2, Qt::DisplayRole), QVariant("bank"));
 }

@@ -16,17 +16,12 @@ use json::JsonValue;
 struct Account {
     uuid: String,
     bank: String,
-    id: i32,
     name: String,
 }
 
 impl Model for Account {
 
     fn new(row: JsonValue, uuid: String) -> Account {
-
-        if row["id"].is_null() {
-            panic!("Id not found into a row account");
-        }
 
         if row["bank"].is_null() {
             panic!("Bank name not found into a row(id {}) account", row["id"]);
@@ -36,7 +31,15 @@ impl Model for Account {
             panic!("Name not found into a row(id {}) account", row["id"]);
         }
 
-        Account{ uuid: uuid, bank: row["bank"].to_string(), id: row["id"].as_i32().unwrap(), name: row["name"].to_string() }
+        Account{ uuid: uuid, bank: row["bank"].to_string(), name: row["name"].to_string() }
+    }
+
+    fn to_save(self) -> (String, bool, JsonValue) {
+
+        (self.uuid.clone(), self.uuid.is_empty(), object!{
+            "bank" => self.bank,
+            "name" => self.name,
+        })
     }
 }
 
@@ -86,12 +89,12 @@ impl AccountsTrait for Accounts {
         true
     }
 
-    fn id(&self, index: usize) -> i32 {
-        self.list[index].id
+    fn uuid(&self, index: usize) -> &str {
+        &self.list[index].uuid
     }
 
-    fn set_id(&mut self, index: usize, v: i32) -> bool {
-        self.list[index].id = v;
+    fn set_uuid(&mut self, index: usize, v: String) -> bool {
+        self.list[index].uuid = v;
         true
     }
 

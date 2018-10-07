@@ -39,10 +39,10 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     Q_INVOKABLE QString bank(int row) const;
     Q_INVOKABLE bool setBank(int row, const QString& value);
-    Q_INVOKABLE qint32 id(int row) const;
-    Q_INVOKABLE bool setId(int row, qint32 value);
     Q_INVOKABLE QString name(int row) const;
     Q_INVOKABLE bool setName(int row, const QString& value);
+    Q_INVOKABLE QString uuid(int row) const;
+    Q_INVOKABLE bool setUuid(int row, const QString& value);
 
 signals:
     // new data is ready to be made available to the model with fetchMore()

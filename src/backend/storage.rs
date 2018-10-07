@@ -10,8 +10,8 @@ use std::error::Error;
 use std::fs::{ File, OpenOptions };
 use std::io::{ Read, Write };
 use std::path::Path;
-use std::option::Option;
 use std::sync::Mutex;
+use std::option::Option;
 use json::{ parse, JsonValue };
 use uuid::Uuid;
 
@@ -34,6 +34,9 @@ pub trait Model {
 
     // For set data into struct
     fn new(row: JsonValue, uuid: String) -> Self;
+
+    // Parse to storage data
+    fn to_save(self) -> (String, bool, JsonValue);
 }
 
 //
@@ -122,6 +125,23 @@ impl Storage {
     pub fn get_section_data(&mut self, name: String) -> Data {
         Data { section: name, storage: self, last_position: 0, need_find_section: true }
     }
+
+    // Persist current lines on storage
+    pub fn persist(&mut self) {
+
+        if self.file.as_ref().unwrap().set_len(0).is_err() {
+            panic!("Couldn't reset storage file");
+        }
+
+        for line in self.lines.clone() {
+            self.file.as_ref().unwrap()
+                .write_fmt(format_args!("{}\n", line))
+                .expect("Couldn't write line on storage file");
+        }
+
+        // Force reopen the file on next read
+        // self.storage.file = None;
+    }
 }
 
 impl<'a> Data<'a> {
@@ -172,6 +192,34 @@ impl<'a> Data<'a> {
         }
 
         Err("Next row not found")
+    }
+
+    // Insert, or update, the file into storage
+    pub fn save<M: Model>(&mut self, row: M) {
+
+        let (uuid, is_new, data) = row.to_save();
+
+        if is_new {
+            // New register
+
+            // To force postion after section start
+            self.need_find_section = false;
+            self.find_section();
+
+            self.storage.lines.insert(self.last_position, format!("{} {}", Uuid::new_v4(), data.dump()));
+
+            self.need_find_section = false;
+        } else {
+            // Register to update
+            for (i, line) in self.storage.lines.clone().iter().enumerate() {
+                if line.chars().take(36).collect::<String>() == uuid {
+                    self.storage.lines[i] = format!("{} {}", uuid, data.dump());
+                    break;
+                }
+            }
+        }
+
+        self.storage.persist();
     }
 }
 

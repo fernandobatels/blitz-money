@@ -24,12 +24,6 @@ ApplicationWindow {
         model: sourceAccounts
 
         TableViewColumn {
-            role: "id"
-            title: "#id"
-            width: 50
-        }
-
-        TableViewColumn {
             role: "name"
             title: qsTr("Name")
             width: 200
@@ -52,5 +46,11 @@ ApplicationWindow {
             title: qsTr("Opening Balance Date")
             width: 100
        }
+
+        TableViewColumn {
+            role: "uuid"
+            title: "#id"
+            width: 50
+        }
    }
 }

@@ -176,10 +176,10 @@ pub trait AccountsTrait {
     fn sort(&mut self, u8, SortOrder) {}
     fn bank(&self, index: usize) -> &str;
     fn set_bank(&mut self, index: usize, String) -> bool;
-    fn id(&self, index: usize) -> i32;
-    fn set_id(&mut self, index: usize, i32) -> bool;
     fn name(&self, index: usize) -> &str;
     fn set_name(&mut self, index: usize, String) -> bool;
+    fn uuid(&self, index: usize) -> &str;
+    fn set_uuid(&mut self, index: usize, String) -> bool;
 }
 
 #[no_mangle]
@@ -278,20 +278,6 @@ pub unsafe extern "C" fn accounts_set_data_bank(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn accounts_data_id(ptr: *const Accounts, row: c_int) -> i32 {
-    let o = &*ptr;
-    o.id(to_usize(row)).into()
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn accounts_set_data_id(
-    ptr: *mut Accounts, row: c_int,
-    v: i32,
-) -> bool {
-    (&mut *ptr).set_id(to_usize(row), v)
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn accounts_data_name(
     ptr: *const Accounts, row: c_int,
     d: *mut QString,
@@ -312,4 +298,27 @@ pub unsafe extern "C" fn accounts_set_data_name(
     let mut v = String::new();
     set_string_from_utf16(&mut v, s, len);
     o.set_name(to_usize(row), v)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn accounts_data_uuid(
+    ptr: *const Accounts, row: c_int,
+    d: *mut QString,
+    set: fn(*mut QString, *const c_char, len: c_int),
+) {
+    let o = &*ptr;
+    let data = o.uuid(to_usize(row));
+    let s: *const c_char = data.as_ptr() as (*const c_char);
+    set(d, s, to_c_int(data.len()));
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn accounts_set_data_uuid(
+    ptr: *mut Accounts, row: c_int,
+    s: *const c_ushort, len: c_int,
+) -> bool {
+    let o = &mut *ptr;
+    let mut v = String::new();
+    set_string_from_utf16(&mut v, s, len);
+    o.set_uuid(to_usize(row), v)
 }

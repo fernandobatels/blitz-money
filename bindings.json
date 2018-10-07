@@ -8,8 +8,8 @@
         "Accounts": {
             "type": "List",
             "itemProperties": {
-                "id": {
-                    "type": "qint32",
+                "uuid": {
+                    "type": "QString",
                     "write": true,
                     "roles": [ [ "display", "edit" ] ]
                 },
