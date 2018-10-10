@@ -13,10 +13,25 @@ ApplicationWindow {
         RowLayout {
             anchors.fill: parent
 
+            ToolButton {
+                action: newAccountAction
+            }
+
             Item {
                 Layout.fillWidth: true
             }
         }
+    }
+
+    EditAccountWindow {
+        id: editAccountWindow
+    }
+
+    Action {
+        id: newAccountAction
+        iconName: "address-book-new"
+        text: qsTr("Create new account")
+        onTriggered: editAccountWindow.show()
     }
 
     TableView {
