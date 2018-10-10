@@ -10,16 +10,15 @@ use std::error::Error;
 use std::fs::{ File, OpenOptions };
 use std::io::{ Read, Write };
 use std::path::Path;
-use std::sync::Mutex;
 use std::option::Option;
 use json::{ parse, JsonValue };
 use uuid::Uuid;
 
 // Representation of storage
 pub struct Storage {
-    path_str: String,
-    file: Option<File>,
-    lines: Vec<String>,
+    pub path_str: String,
+    pub file: Option<File>,
+    pub lines: Vec<String>,
 }
 
 // Representation of section data
@@ -37,17 +36,6 @@ pub trait Model {
 
     // Parse to storage data
     fn to_save(self) -> (String, bool, JsonValue);
-}
-
-//
-// Storage of bliz money is based in a single file. To
-// ensure the integrity of data we need to centralize the
-// access to file.
-//
-// More informations about the file storage into example.bms
-//
-lazy_static! {
-    pub static ref LOCKED_STORAGE: Mutex<Storage> = Mutex::new(Storage { path_str: "/tmp/bmoneytmp.bms".to_string(), file: None, lines: Vec::new() });
 }
 
 impl Storage {

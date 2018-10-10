@@ -2,3 +2,5 @@ build
 target
 *.swp
 src/qtbindingsimplementation.rs
+/target
+**/*.rs.bk
