@@ -14,6 +14,9 @@ pub struct Account {
    pub uuid: String,
    pub bank: String,
    pub name: String,
+   pub open_balance: f32,
+   pub open_balance_date: String,
+   pub currency: String
 }
 
 impl Model for Account {
@@ -21,14 +24,33 @@ impl Model for Account {
     fn new(row: JsonValue, uuid: String) -> Account {
 
         if row["bank"].is_null() {
-            panic!("Bank name not found into a row(id {}) account", row["id"]);
+            panic!("Bank name not found into a row(id {}) account", uuid);
         }
 
         if row["name"].is_null() {
-            panic!("Name not found into a row(id {}) account", row["id"]);
+            panic!("Name not found into a row(id {}) account", uuid);
         }
 
-        Account{ uuid: uuid, bank: row["bank"].to_string(), name: row["name"].to_string() }
+        if row["open_balance"].is_null() {
+            panic!("Open balance not found into a row(id {}) account", uuid);
+        }
+
+        if row["open_balance_date"].is_null() {
+            panic!("Open balance date not found into a row(id {}) account", uuid);
+        }
+
+        if row["currency"].is_null() {
+            panic!("Currency not found into a row(id {}) account", uuid);
+        }
+
+        Account {
+            uuid: uuid,
+            bank: row["bank"].to_string(),
+            name: row["name"].to_string(),
+            open_balance: row["open_balance"].as_f32().unwrap(),
+            open_balance_date: row["open_balance_date"].to_string(),
+            currency: row["currency"].to_string()
+        }
     }
 
     fn to_save(self) -> (String, bool, JsonValue) {
@@ -36,12 +58,21 @@ impl Model for Account {
         (self.uuid.clone(), self.uuid.is_empty(), object!{
             "bank" => self.bank,
             "name" => self.name,
+            "open_balance" => self.open_balance,
+            "open_balance_date" => self.open_balance_date,
+            "currency" => self.currency,
         })
     }
 }
 
 impl Account {
 
+    // Return the open balance formatted whit currency
+    pub fn open_balance_formmated(&self) -> String {
+        format!("{} {:.2}", self.currency, self.open_balance)
+    }
+
+    // Return a list with all accounts
     pub fn get_accounts(mut storage: Storage) -> Vec<Account> {
 
         storage.start_section("accounts".to_string());

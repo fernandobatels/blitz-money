@@ -1,9 +1,15 @@
 
 [package]
-name = "blitz-money"
+name = "bmoney"
+description = "Blitz Money - Application for personal financial control"
+repository = "https://github.com/fernandobatels/blitz-money"
+homepage = "https://github.com/fernandobatels/blitz-money"
 version = "0.1.0"
 authors = ["Luis Fernando Batels <luisfbatels@gmail.com>"]
 
 [dependencies]
 json = "*"
 uuid = { version = "0.7", features = ["v4"] }
+prettytable-rs = "^0.8"
+colored = "1.6"
+chrono = "0.4"
