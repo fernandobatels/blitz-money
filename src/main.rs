@@ -42,8 +42,10 @@ fn main() {
             AccountsUI::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {
             AccountsUI::update(storage, args[3..].to_vec());
+        } else if args[2] == "rm" {
+            AccountsUI::rm(storage, args[3..].to_vec());
         } else {
-            println!("How to use: bmoney accounts [action]");
+            println!("How to use: bmoney accounts [list|add|update|rm]");
         }
     } else {
      println!("How to use: bmoney [module] [action]");

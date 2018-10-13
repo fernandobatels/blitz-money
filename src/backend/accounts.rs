@@ -103,12 +103,22 @@ impl Account {
     }
 
     // Save updates, or create new, account on storage
-    pub fn storage_account(storage: &mut Storage, account: Account) {
+    pub fn store_account(storage: &mut Storage, account: Account) {
 
         storage.start_section("accounts".to_string());
 
         let mut data = storage.get_section_data("accounts".to_string());
 
         data.save(account);
+    }
+
+    // Remvoe account of storage
+    pub fn remove_account(storage: &mut Storage, uuid: String) {
+
+        storage.start_section("accounts".to_string());
+
+        let mut data = storage.get_section_data("accounts".to_string());
+
+        data.remove_by_id(uuid);
     }
 }

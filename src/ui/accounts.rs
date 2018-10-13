@@ -50,7 +50,7 @@ impl AccountsUI {
         if params.len() == 5 {
             // Shell mode
 
-            Account::storage_account(&mut storage, Account {
+            Account::store_account(&mut storage, Account {
                 uuid: "".to_string(),
                 bank: params[1].trim().to_string(),
                 name: params[0].trim().to_string(),
@@ -86,7 +86,7 @@ impl AccountsUI {
             io::stdin().read_line(&mut currency)
                 .expect("Failed to read currency");
 
-            Account::storage_account(&mut storage, Account {
+            Account::store_account(&mut storage, Account {
                 uuid: "".to_string(),
                 bank: bank.trim().to_string(),
                 name: name.trim().to_string(),
@@ -124,7 +124,7 @@ impl AccountsUI {
                 panic!("Field not found!");
             }
 
-            Account::storage_account(&mut storage, account);
+            Account::store_account(&mut storage, account);
 
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
@@ -177,12 +177,26 @@ impl AccountsUI {
                 account.currency = currency.trim().to_string();
             }
 
-            Account::storage_account(&mut storage, account);
+            Account::store_account(&mut storage, account);
 
         } else {
             // Help mode
             println!("How to use: bmoney accounts update [id] [name|bank|obd|ob|curency] [value]");
             println!("Or with interactive mode: bmoney accounts update -i")
+        }
+    }
+
+    // Remove a existing account
+    pub fn rm(mut storage: Storage, params: Vec<String>) {
+
+        if params.len() == 1 {
+            // Shell mode
+
+            Account::remove_account(&mut storage, params[0].trim().to_string());
+
+        } else {
+            // Help mode
+            println!("How to use: bmoney accounts rm [id]");
         }
     }
 }

@@ -201,7 +201,7 @@ impl<'a> Data<'a> {
         Err("Next row not found")
     }
 
-    // Insert, or update, the file into storage
+    // Insert, or update, the row into storage
     pub fn save<M: Model>(&mut self, row: M) {
 
         let (uuid, is_new, data) = row.to_save();
@@ -225,6 +225,21 @@ impl<'a> Data<'a> {
                     self.storage.lines[i] = format!("{} {}", uuid, data.dump());
                     break;
                 }
+            }
+        }
+
+        self.storage.persist();
+    }
+
+    // Remove row of storage by id
+    pub fn remove_by_id(&mut self, uuid: String) {
+
+        self.storage.reopen_file();
+
+        for (i, line) in self.storage.lines.clone().iter().enumerate() {
+            if line.chars().take(36).collect::<String>() == uuid {
+                self.storage.lines.remove(i);
+                break;
             }
         }
 
