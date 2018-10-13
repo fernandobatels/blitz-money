@@ -47,9 +47,18 @@ impl AccountsUI {
     // Create new account
     pub fn add(storage: Storage, params: Vec<String>) {
 
-        if params.len() > 0 {
+        if params.len() == 5 {
+            // Shell mode
 
-        } else {
+            Account::storage_account(storage, Account {
+                uuid: "".to_string(),
+                bank: params[1].trim().to_string(),
+                name: params[0].trim().to_string(),
+                open_balance: params[3].trim().parse::<f32>().unwrap(),
+                open_balance_date: params[2].trim().to_string(),
+                currency: params[4].trim().to_string()
+            });
+        } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
             println!("Account name:");
@@ -85,6 +94,10 @@ impl AccountsUI {
                 open_balance_date: obd.trim().to_string(),
                 currency: currency.trim().to_string()
             });
+        } else {
+            // Help mode
+            println!("How to use: bmoney accounts add [name] [bank] [opening balance date] [opening balance] [currency]");
+            println!("Or with interactive mode: bmoney accounts add -i")
         }
     }
 }
