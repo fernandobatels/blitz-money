@@ -81,7 +81,7 @@ impl Storage {
 
             self.reopen_file();
 
-            self.file.as_ref().unwrap().write_fmt(format_args!("::section::{}\n", name))
+            self.file.as_ref().unwrap().write_fmt(format_args!("\n::section::{}\n", name))
                 .expect("Couldn't create the section on storage file");
 
             has_write = true;

@@ -19,6 +19,7 @@ mod backend;
 
 use std::env;
 use ui::accounts::AccountsUI;
+use ui::contacts::ContactsUI;
 use backend::storage::Storage;
 
 fn main() {
@@ -46,6 +47,18 @@ fn main() {
             AccountsUI::rm(storage, args[3..].to_vec());
         } else {
             println!("How to use: bmoney accounts [list|add|update|rm]");
+        }
+    } else if args[1] == "contacts" {
+        if args[2] == "list" {
+            ContactsUI::list(storage);
+        } else if args[2] == "add" {
+            ContactsUI::add(storage, args[3..].to_vec());
+        } else if args[2] == "update" {
+            ContactsUI::update(storage, args[3..].to_vec());
+        } else if args[2] == "rm" {
+            ContactsUI::rm(storage, args[3..].to_vec());
+        } else {
+            println!("How to use: bmoney contacts [list|add|update|rm]");
         }
     } else {
      println!("How to use: bmoney [module] [action]");
