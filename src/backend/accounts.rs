@@ -87,4 +87,14 @@ impl Account {
 
         return list;
     }
+
+    // Save updates, or create new, account on storage
+    pub fn storage_account(mut storage: Storage, account: Account) {
+
+        storage.start_section("accounts".to_string());
+
+        let mut data = storage.get_section_data("accounts".to_string());
+
+        data.save(account);
+    }
 }

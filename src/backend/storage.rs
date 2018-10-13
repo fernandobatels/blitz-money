@@ -187,14 +187,16 @@ impl<'a> Data<'a> {
 
         let (uuid, is_new, data) = row.to_save();
 
+        self.storage.reopen_file();
+
         if is_new {
             // New register
 
             // To force postion after section start
-            self.need_find_section = false;
+            self.need_find_section = true;
             self.find_section();
 
-            self.storage.lines.insert(self.last_position, format!("{} {}", Uuid::new_v4(), data.dump()));
+            self.storage.lines.insert(self.last_position + 1, format!("{} {}", Uuid::new_v4(), data.dump()));
 
             self.need_find_section = false;
         } else {

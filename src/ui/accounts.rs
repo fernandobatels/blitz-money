@@ -8,6 +8,7 @@
 
 use colored::*;
 use prettytable::Table;
+use std::io;
 
 use backend::accounts::Account;
 use backend::storage::Storage;
@@ -41,5 +42,49 @@ impl AccountsUI {
         }
 
         table.printstd();
+    }
+
+    // Create new account
+    pub fn add(storage: Storage, params: Vec<String>) {
+
+        if params.len() > 0 {
+
+        } else {
+            // Interactive mode
+
+            println!("Account name:");
+            let mut name = String::new();
+            io::stdin().read_line(&mut name)
+                .expect("Failed to read name");
+
+            println!("Bank:");
+            let mut bank = String::new();
+            io::stdin().read_line(&mut bank)
+                .expect("Failed to read bank");
+
+            println!("Opening Balance Date(format YYYY-MM-DD):");
+            let mut obd = String::new();
+            io::stdin().read_line(&mut obd)
+                .expect("Failed to read opening balance date");
+
+            println!("Opening Balance:");
+            let mut ob = String::new();
+            io::stdin().read_line(&mut ob)
+                .expect("Failed to read opening balance");
+
+            println!("Currency(eg: $, R$...):");
+            let mut currency = String::new();
+            io::stdin().read_line(&mut currency)
+                .expect("Failed to read currency");
+
+            Account::storage_account(storage, Account {
+                uuid: "".to_string(),
+                bank: bank.trim().to_string(),
+                name: name.trim().to_string(),
+                open_balance: ob.trim().parse::<f32>().unwrap(),
+                open_balance_date: obd.trim().to_string(),
+                currency: currency.trim().to_string()
+            });
+        }
     }
 }

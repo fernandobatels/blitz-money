@@ -38,6 +38,8 @@ fn main() {
     if args[1] == "accounts" {
         if args[2] == "list" {
             AccountsUI::list(storage);
+        } else if args[2] == "add" {
+            AccountsUI::add(storage, args[3..].to_vec());
         } else {
             println!("How to use: bmoney accounts [action]");
         }
