@@ -73,7 +73,7 @@ impl Account {
     }
 
     // Return a list with all accounts
-    pub fn get_accounts(mut storage: Storage) -> Vec<Account> {
+    pub fn get_accounts(storage: &mut Storage) -> Vec<Account> {
 
         storage.start_section("accounts".to_string());
 
@@ -88,8 +88,22 @@ impl Account {
         return list;
     }
 
+    // Return the account of id
+    pub fn get_account(storage: &mut Storage, uuid: String) -> Result<Account, &'static str> {
+
+        storage.start_section("accounts".to_string());
+
+        let mut data = storage.get_section_data("accounts".to_string());
+
+        if data.find_by_id(uuid) {
+            return data.next::<Account>();
+        }
+
+        Err("Account not found")
+    }
+
     // Save updates, or create new, account on storage
-    pub fn storage_account(mut storage: Storage, account: Account) {
+    pub fn storage_account(storage: &mut Storage, account: Account) {
 
         storage.start_section("accounts".to_string());
 

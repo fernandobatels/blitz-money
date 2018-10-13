@@ -152,6 +152,25 @@ impl<'a> Data<'a> {
         }
     }
 
+    // Find the next row by the id. After this method is necessary
+    // use the next() method for get the row
+    pub fn find_by_id(&mut self, uuid: String) -> bool {
+
+        self.storage.reopen_file();
+        // To force postion after section start
+        self.need_find_section = true;
+        self.find_section();
+
+        for (i, line) in self.storage.lines.iter().enumerate() {
+            if line.trim().chars().take(36).collect::<String>() == uuid {
+                self.last_position = i.clone() - 1;
+                return true;
+            }
+        }
+
+        false
+    }
+
     // Return the next row of values into a struct filled
     pub fn next<M: Model>(&mut self) -> Result<M, &'static str> {
 
@@ -198,7 +217,7 @@ impl<'a> Data<'a> {
 
             self.storage.lines.insert(self.last_position + 1, format!("{} {}", Uuid::new_v4(), data.dump()));
 
-            self.need_find_section = false;
+            self.need_find_section = true;
         } else {
             // Register to update
             for (i, line) in self.storage.lines.clone().iter().enumerate() {
