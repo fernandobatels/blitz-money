@@ -9,6 +9,7 @@
 use backend::storage::*;
 use backend::accounts::*;
 use backend::contacts::*;
+use chrono::{Local, DateTime};
 use json::JsonValue;
 
 #[derive(Default, Clone, Debug)]
@@ -20,7 +21,7 @@ pub struct Movimentation {
    pub value: f32,
    pub deadline: String,
    pub paid_in: String,
-   pub created_at: String,
+   pub created_at: Option<DateTime<Local>>,
 }
 
 impl Model for Movimentation {
@@ -57,6 +58,7 @@ impl Model for Movimentation {
 
         let account = Some(Account::get_account(storage, row["account"].to_string()).unwrap());
         let contact = Some(Contact::get_contact(storage, row["contact"].to_string()).unwrap());
+        let created_at = Some(row["created_at"].to_string().parse::<DateTime<Local>>().unwrap());
 
         Movimentation {
             uuid: uuid,
@@ -66,7 +68,7 @@ impl Model for Movimentation {
             value: row["value"].as_f32().unwrap(),
             deadline: row["deadline"].to_string(),
             paid_in: row["paid_in"].to_string(),
-            created_at: row["created_at"].to_string()
+            created_at: created_at
         }
     }
 
@@ -79,7 +81,7 @@ impl Model for Movimentation {
             "value" => self.value,
             "deadline" => self.deadline,
             "paid_in" => self.paid_in,
-            "created_at" => self.created_at,
+            "created_at" => self.created_at.unwrap().to_rfc3339().to_string(),
         })
     }
 }
@@ -88,24 +90,36 @@ impl Movimentation {
 
     // Return the value formatted whit currency of account
     pub fn value_formmated(&self) -> String {
-        format!("{:.2}", self.value)
-        //format!("{} {:.2}", self.account.unwrap().currency, self.value)
+        self.account.clone().unwrap().format_value(self.value)
+    }
+
+    // Return the paid in formatted
+    pub fn paid_in_formmated(&self) -> String {
+        if self.paid_in.is_empty() {
+            return "(payable)".to_string();
+        }
+        self.paid_in.clone()
     }
 
     // Return a list with all movimentations
-    pub fn get_movimentations(storage: &mut Storage) -> Vec<Movimentation> {
+    // and total
+    pub fn get_movimentations(storage: &mut Storage, account_uuid: String) -> (Vec<Movimentation>, f32, f32, f32) {
 
         storage.start_section("movimentations".to_string());
 
         let mut data = storage.get_section_data("movimentations".to_string());
-
         let mut list: Vec<Movimentation> = vec![];
+        let mut expenses = 0.0;
+        let mut incomes = 0.0;
+        let mut total = 0.0;
 
         while let Ok(line) = data.next::<Movimentation>() {
-            list.push(line);
+            if account_uuid == line.account.clone().unwrap().uuid {
+                list.push(line);
+            }
         }
 
-        return list;
+        return (list, expenses, incomes, total);
     }
 
     // Return the movimentation of id

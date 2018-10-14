@@ -8,6 +8,7 @@
 
 use colored::*;
 use prettytable::Table;
+use chrono::{Local};
 use std::io;
 
 use backend::movimentations::Movimentation;
@@ -20,32 +21,45 @@ pub struct MovimentationsUI {}
 impl MovimentationsUI {
 
     // List of user movimentations
-    pub fn list(mut storage: Storage) {
+    pub fn list(mut storage: Storage, params: Vec<String>) {
 
-        let movimentations = Movimentation::get_movimentations(&mut storage);
-        let mut table = Table::new();
+        if params.len() == 1 {
+            let (movimentations, expenses, incomes, total) = Movimentation::get_movimentations(&mut storage, params[0].clone());
+            let account = Account::get_account(&mut storage, params[0].trim().to_string()).unwrap();
+            let mut table = Table::new();
 
-        table.add_row(row!["Description".bold(), "Value".bold(), "Deadline".bold(), "Paid in".bold(), "Contact".bold(), "Account".bold(), "#id".bold()]);
+            table.add_row(row!["Description".bold(), "Value".bold(), "Deadline".bold(), "Paid in".bold(), "Contact".bold(), "#id".bold()]);
 
-        for movimentation in movimentations {
+            for movimentation in movimentations {
 
-            let obcolor = match movimentation.value >= 0.0 {
+                let obcolor = match movimentation.value >= 0.0 {
+                    true => "green",
+                    false => "red"
+                };
+
+                table.add_row(row![
+                    movimentation.description,
+                    movimentation.value_formmated().color(obcolor),
+                    movimentation.deadline,
+                    movimentation.paid_in_formmated(),
+                    movimentation.contact.unwrap().name,
+                    movimentation.uuid
+                ]);
+            }
+
+            table.add_row(row!["Expenses".bold(), account.format_value(expenses).red()]);
+            table.add_row(row!["Income".bold(), account.format_value(incomes).green()]);
+            let totalobcolor = match total >= 0.0 {
                 true => "green",
                 false => "red"
             };
+            table.add_row(row!["Total".bold(), account.format_value(total).color(totalobcolor)]);
 
-            table.add_row(row![
-                movimentation.description,
-                movimentation.value_formmated().color(obcolor),
-                movimentation.deadline,
-                movimentation.paid_in,
-                movimentation.contact.unwrap().name,
-                movimentation.account.unwrap().name,
-                movimentation.uuid
-            ]);
+            table.printstd();
+        } else {
+            // Help mode
+            println!("How to use: bmoney movimentations list [account id]");
         }
-
-        table.printstd();
     }
 
     // Create new movimentation
@@ -64,7 +78,7 @@ impl MovimentationsUI {
                 contact: contact,
                 deadline: params[4].trim().to_string(),
                 paid_in: params[5].trim().to_string(),
-                created_at: "2018-10-10 10:10".to_string(),
+                created_at: Some(Local::now()),
             });
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
@@ -91,12 +105,12 @@ impl MovimentationsUI {
                 .expect("Failed to read contact");
             let contact = Some(Contact::get_contact(&mut storage, contact_uuid.trim().to_string()).unwrap());
 
-            println!("Deadline:");
+            println!("Deadline(format YYYY-MM-DD):");
             let mut deadline = String::new();
             io::stdin().read_line(&mut deadline)
                 .expect("Failed to read deadline");
 
-            println!("Paid in:");
+            println!("Paid in(format YYYY-MM-DD):");
             let mut paid_in = String::new();
             io::stdin().read_line(&mut paid_in)
                 .expect("Failed to read paid in");
@@ -109,7 +123,7 @@ impl MovimentationsUI {
                 contact: contact,
                 deadline: deadline.trim().to_string(),
                 paid_in: paid_in.trim().to_string(),
-                created_at: "2018-10-10 10:10".to_string(),
+                created_at: Some(Local::now()),
             });
         } else {
             // Help mode
@@ -188,7 +202,7 @@ impl MovimentationsUI {
                 movimentation.contact = Some(Contact::get_contact(&mut storage, contact.trim().to_string()).unwrap());
             }
 
-            println!("Deadline: {}(keep blank for skip)", movimentation.deadline);
+            println!("Deadline(format YYYY-MM-DD): {}(keep blank for skip)", movimentation.deadline);
             let mut deadline = String::new();
             io::stdin().read_line(&mut deadline)
                 .expect("Failed to read deadline");
@@ -196,7 +210,7 @@ impl MovimentationsUI {
                 movimentation.deadline = deadline.trim().to_string();
             }
 
-            println!("Paid in: {}(keep blank for skip)", movimentation.paid_in);
+            println!("Paid in(format YYYY-MM-DD): {}(keep blank for skip)", movimentation.paid_in);
             let mut paid_in = String::new();
             io::stdin().read_line(&mut paid_in)
                 .expect("Failed to read paid_in");

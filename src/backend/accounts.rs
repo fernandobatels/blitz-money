@@ -69,7 +69,12 @@ impl Account {
 
     // Return the open balance formatted whit currency
     pub fn open_balance_formmated(&self) -> String {
-        format!("{} {:.2}", self.currency, self.open_balance)
+        self.format_value(self.open_balance)
+    }
+
+    // Return the value formatted with the currency of account
+    pub fn format_value(&self, value: f32) -> String {
+        format!("{} {:.2}", self.currency, value)
     }
 
     // Return a list with all accounts

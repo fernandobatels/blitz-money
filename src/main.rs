@@ -63,7 +63,7 @@ fn main() {
         }
     } else if args[1] == "movimentations" {
         if args[2] == "list" {
-            MovimentationsUI::list(storage);
+            MovimentationsUI::list(storage, args[3..].to_vec());
         } else if args[2] == "add" {
             MovimentationsUI::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {
