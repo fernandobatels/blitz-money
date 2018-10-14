@@ -21,7 +21,7 @@ pub struct Account {
 
 impl Model for Account {
 
-    fn new(row: JsonValue, uuid: String) -> Account {
+    fn new(row: JsonValue, uuid: String, _storage: &mut Storage) -> Account {
 
         if row["bank"].is_null() {
             panic!("Bank name not found into a row(id {}) account", uuid);

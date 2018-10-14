@@ -32,7 +32,7 @@ pub struct Data<'a> {
 pub trait Model {
 
     // For set data into struct
-    fn new(row: JsonValue, uuid: String) -> Self;
+    fn new(row: JsonValue, uuid: String, storage: &mut Storage) -> Self;
 
     // Parse to storage data
     fn to_save(self) -> (String, bool, JsonValue);
@@ -182,9 +182,9 @@ impl<'a> Data<'a> {
 
         if self.last_position.to_owned() < self.storage.lines.len() {
 
-            let linestr = &self.storage.lines[self.last_position.to_owned()].trim();
+            let linestr = self.storage.lines[self.last_position.to_owned()].clone();
 
-            if !linestr.is_empty() {
+            if !linestr.trim().is_empty() {
 
                 let uuid = linestr.chars().take(36).collect();
                 let json = linestr.chars().skip(37).collect::<String>();
@@ -194,7 +194,7 @@ impl<'a> Data<'a> {
                     Err(e) => panic!("Couldn't parse the row: {}", e.description())
                 };
 
-                return Ok(M::new(row, uuid));
+                return Ok(M::new(row, uuid, self.storage));
             }
         }
 
