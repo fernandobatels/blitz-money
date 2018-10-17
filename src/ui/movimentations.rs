@@ -8,7 +8,7 @@
 
 use colored::*;
 use prettytable::Table;
-use chrono::{Local};
+use chrono::{Local, TimeZone, prelude::Datelike, NaiveDate};
 use std::io;
 
 use backend::movimentations::Movimentation;
@@ -23,9 +23,18 @@ impl MovimentationsUI {
     // List of user movimentations
     pub fn list(mut storage: Storage, params: Vec<String>) {
 
-        if params.len() == 1 {
-            let (movimentations, expenses, incomes, total) = Movimentation::get_movimentations(&mut storage, params[0].clone());
+        if params.len() == 1 || params.len() == 3 {
+
             let account = Account::get_account(&mut storage, params[0].trim().to_string()).unwrap();
+
+            let from = Local::now().with_day(1).unwrap().date().naive_local();
+            let to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
+
+            if params.len() == 3 {
+
+            }
+
+            let (movimentations, expenses, incomes, total) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to);
             let mut table = Table::new();
 
             table.add_row(row!["Description".bold(), "Value".bold(), "Deadline".bold(), "Paid in".bold(), "Contact".bold(), "#id".bold()]);
@@ -40,7 +49,7 @@ impl MovimentationsUI {
                 table.add_row(row![
                     movimentation.description,
                     movimentation.value_formmated().color(obcolor),
-                    movimentation.deadline,
+                    movimentation.deadline.unwrap(),
                     movimentation.paid_in_formmated(),
                     movimentation.contact.unwrap().name,
                     movimentation.uuid
@@ -58,7 +67,7 @@ impl MovimentationsUI {
             table.printstd();
         } else {
             // Help mode
-            println!("How to use: bmoney movimentations list [account id]");
+            println!("How to use: bmoney movimentations list [account id] [from] [to]");
         }
     }
 
@@ -76,7 +85,7 @@ impl MovimentationsUI {
                 value: params[1].trim().parse::<f32>().unwrap(),
                 account: account,
                 contact: contact,
-                deadline: params[4].trim().to_string(),
+                deadline: Some(NaiveDate::parse_from_str(&params[4].trim().to_string(), "%Y-%m-%d").unwrap()),
                 paid_in: params[5].trim().to_string(),
                 created_at: Some(Local::now()),
             });
@@ -121,7 +130,7 @@ impl MovimentationsUI {
                 value: value.trim().parse::<f32>().unwrap(),
                 account: account,
                 contact: contact,
-                deadline: deadline.trim().to_string(),
+                deadline: Some(NaiveDate::parse_from_str(&deadline.trim().to_string(), "%Y-%m-%d").unwrap()),
                 paid_in: paid_in.trim().to_string(),
                 created_at: Some(Local::now()),
             });
@@ -150,7 +159,7 @@ impl MovimentationsUI {
             } else if params[1] == "contact" {
                 movimentation.contact = Some(Contact::get_contact(&mut storage, params[2].trim().to_string()).unwrap());
             } else if params[1] == "deadline" {
-                movimentation.deadline = params[2].trim().to_string();
+                movimentation.deadline = Some(NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap());
             } else if params[1] == "paid_in" {
                 movimentation.paid_in = params[2].trim().to_string();
             } else {
@@ -202,12 +211,12 @@ impl MovimentationsUI {
                 movimentation.contact = Some(Contact::get_contact(&mut storage, contact.trim().to_string()).unwrap());
             }
 
-            println!("Deadline(format YYYY-MM-DD): {}(keep blank for skip)", movimentation.deadline);
+            println!("Deadline(format YYYY-MM-DD): {}(keep blank for skip)", movimentation.deadline.unwrap());
             let mut deadline = String::new();
             io::stdin().read_line(&mut deadline)
                 .expect("Failed to read deadline");
             if !deadline.trim().is_empty() {
-                movimentation.deadline = deadline.trim().to_string();
+                movimentation.deadline = Some(NaiveDate::parse_from_str(&deadline.trim().to_string(), "%Y-%m-%d").unwrap());
             }
 
             println!("Paid in(format YYYY-MM-DD): {}(keep blank for skip)", movimentation.paid_in);

@@ -8,6 +8,7 @@
 
 use backend::storage::*;
 use json::JsonValue;
+use chrono::NaiveDate;
 
 #[derive(Default, Clone, Debug)]
 pub struct Account {
@@ -15,7 +16,7 @@ pub struct Account {
    pub bank: String,
    pub name: String,
    pub open_balance: f32,
-   pub open_balance_date: String,
+   pub open_balance_date: Option<NaiveDate>,
    pub currency: String
 }
 
@@ -43,12 +44,14 @@ impl Model for Account {
             panic!("Currency not found into a row(id {}) account", uuid);
         }
 
+        let open_balance_date = Some(NaiveDate::parse_from_str(&row["open_balance_date"].to_string(), "%Y-%m-%d").unwrap());
+
         Account {
             uuid: uuid,
             bank: row["bank"].to_string(),
             name: row["name"].to_string(),
             open_balance: row["open_balance"].as_f32().unwrap(),
-            open_balance_date: row["open_balance_date"].to_string(),
+            open_balance_date: open_balance_date,
             currency: row["currency"].to_string()
         }
     }
@@ -59,7 +62,7 @@ impl Model for Account {
             "bank" => self.bank,
             "name" => self.name,
             "open_balance" => self.open_balance,
-            "open_balance_date" => self.open_balance_date,
+            "open_balance_date" => self.open_balance_date.unwrap().format("%Y-%m-%d").to_string(),
             "currency" => self.currency,
         })
     }

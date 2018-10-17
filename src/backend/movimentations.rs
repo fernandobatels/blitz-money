@@ -9,7 +9,7 @@
 use backend::storage::*;
 use backend::accounts::*;
 use backend::contacts::*;
-use chrono::{Local, DateTime};
+use chrono::{Local, DateTime, NaiveDate};
 use json::JsonValue;
 
 #[derive(Default, Clone, Debug)]
@@ -19,7 +19,7 @@ pub struct Movimentation {
    pub contact: Option<Contact>,
    pub description: String,
    pub value: f32,
-   pub deadline: String,
+   pub deadline: Option<NaiveDate>,
    pub paid_in: String,
    pub created_at: Option<DateTime<Local>>,
 }
@@ -58,7 +58,9 @@ impl Model for Movimentation {
 
         let account = Some(Account::get_account(storage, row["account"].to_string()).unwrap());
         let contact = Some(Contact::get_contact(storage, row["contact"].to_string()).unwrap());
+
         let created_at = Some(row["created_at"].to_string().parse::<DateTime<Local>>().unwrap());
+        let deadline = Some(NaiveDate::parse_from_str(&row["deadline"].to_string(), "%Y-%m-%d").unwrap());
 
         Movimentation {
             uuid: uuid,
@@ -66,7 +68,7 @@ impl Model for Movimentation {
             contact: contact,
             description: row["description"].to_string(),
             value: row["value"].as_f32().unwrap(),
-            deadline: row["deadline"].to_string(),
+            deadline: deadline,
             paid_in: row["paid_in"].to_string(),
             created_at: created_at
         }
@@ -79,7 +81,7 @@ impl Model for Movimentation {
             "contact" => self.contact.unwrap().uuid,
             "description" => self.description,
             "value" => self.value,
-            "deadline" => self.deadline,
+            "deadline" => self.deadline.unwrap().format("%Y-%m-%d").to_string(),
             "paid_in" => self.paid_in,
             "created_at" => self.created_at.unwrap().to_rfc3339().to_string(),
         })
@@ -103,7 +105,7 @@ impl Movimentation {
 
     // Return a list with all movimentations
     // and total
-    pub fn get_movimentations(storage: &mut Storage, account_uuid: String) -> (Vec<Movimentation>, f32, f32, f32) {
+    pub fn get_movimentations(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate) -> (Vec<Movimentation>, f32, f32, f32) {
 
         storage.start_section("movimentations".to_string());
 
@@ -111,10 +113,26 @@ impl Movimentation {
         let mut list: Vec<Movimentation> = vec![];
         let mut expenses = 0.0;
         let mut incomes = 0.0;
-        let mut total = 0.0;
+        let mut total = account.open_balance;
 
         while let Ok(line) = data.next::<Movimentation>() {
-            if account_uuid == line.account.clone().unwrap().uuid {
+            if account.uuid == line.account.clone().unwrap().uuid {
+
+                // Period filter
+                if line.deadline.unwrap() < from || line.deadline.unwrap() > to {
+                    continue;
+                }
+
+                // Totals
+                if !line.paid_in.is_empty() {
+                    total += line.value;
+                    if line.value >= 0.0 {
+                        incomes += line.value;
+                    } else {
+                        expenses += line.value;
+                    }
+                }
+
                 list.push(line);
             }
         }

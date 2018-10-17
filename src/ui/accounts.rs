@@ -9,6 +9,7 @@
 use colored::*;
 use prettytable::Table;
 use std::io;
+use chrono::NaiveDate;
 
 use backend::accounts::Account;
 use backend::storage::Storage;
@@ -36,7 +37,7 @@ impl AccountsUI {
                 account.name,
                 account.bank,
                 account.open_balance_formmated().color(obcolor),
-                account.open_balance_date,
+                account.open_balance_date.unwrap(),
                 account.uuid
             ]);
         }
@@ -55,7 +56,7 @@ impl AccountsUI {
                 bank: params[1].trim().to_string(),
                 name: params[0].trim().to_string(),
                 open_balance: params[3].trim().parse::<f32>().unwrap(),
-                open_balance_date: params[2].trim().to_string(),
+                open_balance_date: Some(NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap()),
                 currency: params[4].trim().to_string()
             });
         } else if params.len() > 0 && params[0] == "-i" {
@@ -91,7 +92,7 @@ impl AccountsUI {
                 bank: bank.trim().to_string(),
                 name: name.trim().to_string(),
                 open_balance: ob.trim().parse::<f32>().unwrap(),
-                open_balance_date: obd.trim().to_string(),
+                open_balance_date: Some(NaiveDate::parse_from_str(&obd.trim().to_string(), "%Y-%m-%d").unwrap()),
                 currency: currency.trim().to_string()
             });
         } else {
@@ -115,7 +116,7 @@ impl AccountsUI {
             } else if params[1] == "bank" {
                 account.bank = params[2].trim().to_string();
             } else if params[1] == "obd" {
-                account.open_balance_date = params[2].trim().to_string();
+                account.open_balance_date = Some(NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap());
             } else if params[1] == "ob" {
                 account.open_balance = params[2].trim().parse::<f32>().unwrap();
             } else if params[1] == "currency" {
@@ -153,12 +154,12 @@ impl AccountsUI {
                 account.bank = bank.trim().to_string();
             }
 
-            println!("Opening Balance Date(format YYYY-MM-DD): {}(keep blank for skip)", account.open_balance_date);
+            println!("Opening Balance Date(format YYYY-MM-DD): {}(keep blank for skip)", account.open_balance_date.unwrap());
             let mut obd = String::new();
             io::stdin().read_line(&mut obd)
                 .expect("Failed to read opening balance date");
             if !obd.trim().is_empty() {
-                account.open_balance_date = obd.trim().to_string();
+                account.open_balance_date = Some(NaiveDate::parse_from_str(&obd.trim().to_string(), "%Y-%m-%d").unwrap());
             }
 
             println!("Opening Balance: {}(keep blank for skip)", account.open_balance);
