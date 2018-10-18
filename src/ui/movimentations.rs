@@ -8,7 +8,7 @@
 
 use colored::*;
 use prettytable::Table;
-use chrono::{Local, TimeZone, prelude::Datelike, NaiveDate};
+use chrono::{Local, prelude::Datelike, NaiveDate};
 use std::io;
 
 use backend::movimentations::Movimentation;
@@ -34,7 +34,7 @@ impl MovimentationsUI {
 
             }
 
-            let (movimentations, expenses, incomes, total) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to);
+            let (movimentations, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to);
             let mut table = Table::new();
 
             table.add_row(row!["Description".bold(), "Value".bold(), "Deadline".bold(), "Paid in".bold(), "Contact".bold(), "#id".bold()]);
@@ -56,13 +56,15 @@ impl MovimentationsUI {
                 ]);
             }
 
-            table.add_row(row!["Expenses".bold(), account.format_value(expenses).red()]);
-            table.add_row(row!["Income".bold(), account.format_value(incomes).green()]);
-            let totalobcolor = match total >= 0.0 {
-                true => "green",
-                false => "red"
-            };
-            table.add_row(row!["Total".bold(), account.format_value(total).color(totalobcolor)]);
+            for total in totals {
+
+                let totalobcolor = match total.value >= 0.0 {
+                    true => "green",
+                    false => "red"
+                };
+
+                table.add_row(row![total.label.bold(), account.format_value(total.value).color(totalobcolor)]);
+            }
 
             table.printstd();
         } else {

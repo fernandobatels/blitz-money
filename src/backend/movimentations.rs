@@ -24,6 +24,11 @@ pub struct Movimentation {
    pub created_at: Option<DateTime<Local>>,
 }
 
+pub struct Total {
+    pub label: String,
+    pub value: f32,
+}
+
 impl Model for Movimentation {
 
     fn new(row: JsonValue, uuid: String, storage: &mut Storage) -> Movimentation {
@@ -105,31 +110,50 @@ impl Movimentation {
 
     // Return a list with all movimentations
     // and total
-    pub fn get_movimentations(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate) -> (Vec<Movimentation>, f32, f32, f32) {
+    pub fn get_movimentations(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate) -> (Vec<Movimentation>, Vec<Total>) {
 
         storage.start_section("movimentations".to_string());
 
         let mut data = storage.get_section_data("movimentations".to_string());
         let mut list: Vec<Movimentation> = vec![];
-        let mut expenses = 0.0;
-        let mut incomes = 0.0;
-        let mut total = account.open_balance;
+        let mut totals: Vec<Total> = vec![];
+
+        totals.push(Total { label: "Expenses(payable)".to_string(), value: 0.0 });
+        totals.push(Total { label: "Incomes(to receive)".to_string(), value: 0.0 });
+        totals.push(Total { label: "Expenses".to_string(), value: 0.0 });
+        totals.push(Total { label: "Incomes".to_string(), value: 0.0 });
+        totals.push(Total { label: "Previous balance".to_string(), value: account.open_balance });
+        totals.push(Total { label: "Current balance".to_string(), value: account.open_balance });
 
         while let Ok(line) = data.next::<Movimentation>() {
             if account.uuid == line.account.clone().unwrap().uuid {
 
                 // Period filter
                 if line.deadline.unwrap() < from || line.deadline.unwrap() > to {
+
+                    if line.deadline.unwrap() < from {
+                        totals[4].value += line.value;
+                    }
+
                     continue;
                 }
 
                 // Totals
                 if !line.paid_in.is_empty() {
-                    total += line.value;
+
+                    totals[5].value += line.value;
+
                     if line.value >= 0.0 {
-                        incomes += line.value;
+                        totals[3].value += line.value;
                     } else {
-                        expenses += line.value;
+                        totals[2].value += line.value;
+                    }
+                } else {
+
+                    if line.value >= 0.0 {
+                        totals[1].value += line.value;
+                    } else {
+                        totals[0].value += line.value;
                     }
                 }
 
@@ -137,7 +161,7 @@ impl Movimentation {
             }
         }
 
-        return (list, expenses, incomes, total);
+        return (list, totals);
     }
 
     // Return the movimentation of id
