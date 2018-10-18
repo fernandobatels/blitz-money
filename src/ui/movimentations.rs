@@ -27,11 +27,12 @@ impl MovimentationsUI {
 
             let account = Account::get_account(&mut storage, params[0].trim().to_string()).unwrap();
 
-            let from = Local::now().with_day(1).unwrap().date().naive_local();
-            let to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
+            let mut from = Local::now().with_day(1).unwrap().date().naive_local();
+            let mut to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
 
             if params.len() == 3 {
-
+                from = NaiveDate::parse_from_str(&params[1].trim().to_string(), "%Y-%m-%d").unwrap();
+                to = NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap();
             }
 
             let (movimentations, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to);

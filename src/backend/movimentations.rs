@@ -161,6 +161,8 @@ impl Movimentation {
             }
         }
 
+        list.sort_by( | a, b | a.deadline.unwrap().cmp(&b.deadline.unwrap()) );
+
         return (list, totals);
     }
 
