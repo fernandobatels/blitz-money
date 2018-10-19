@@ -6,8 +6,8 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use colored::*;
-use prettytable::Table;
+use prettytable::*;
+use csv::*;
 use chrono::{Local, prelude::Datelike, NaiveDate};
 use std::io;
 
@@ -21,7 +21,7 @@ pub struct MovimentationsUI {}
 impl MovimentationsUI {
 
     // List of user movimentations
-    pub fn list(mut storage: Storage, params: Vec<String>) {
+    pub fn list(mut storage: Storage, params: Vec<String>, is_csv: bool) {
 
         if params.len() == 1 || params.len() == 3 {
 
@@ -36,38 +36,70 @@ impl MovimentationsUI {
             }
 
             let (movimentations, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to);
-            let mut table = Table::new();
 
-            table.add_row(row!["Description".bold(), "Value".bold(), "Deadline".bold(), "Paid in".bold(), "Contact".bold(), "#id".bold()]);
+            let mut table = Table::new();
+            table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+
+            table.set_titles(row![b->"Description", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"#id"]);
 
             for movimentation in movimentations {
 
-                let obcolor = match movimentation.value >= 0.0 {
-                    true => "green",
-                    false => "red"
-                };
-
-                table.add_row(row![
-                    movimentation.description,
-                    movimentation.value_formmated().color(obcolor),
-                    movimentation.deadline.unwrap(),
-                    movimentation.paid_in_formmated(),
-                    movimentation.contact.unwrap().name,
-                    movimentation.uuid
-                ]);
+                if movimentation.value >= 0.0 {
+                    table.add_row(row![
+                        movimentation.description,
+                        Fg->movimentation.value_formmated(),
+                        movimentation.deadline.unwrap(),
+                        movimentation.paid_in_formmated(),
+                        movimentation.contact.unwrap().name,
+                        movimentation.uuid
+                    ]);
+                } else {
+                    table.add_row(row![
+                        movimentation.description,
+                        Fr->movimentation.value_formmated(),
+                        movimentation.deadline.unwrap(),
+                        movimentation.paid_in_formmated(),
+                        movimentation.contact.unwrap().name,
+                        movimentation.uuid
+                    ]);
+                }
             }
+
+
+            table.add_row(row!["", "", "", "", "", ""]);
 
             for total in totals {
 
-                let totalobcolor = match total.value >= 0.0 {
-                    true => "green",
-                    false => "red"
-                };
-
-                table.add_row(row![total.label.bold(), account.format_value(total.value).color(totalobcolor)]);
+                if total.value >= 0.0 {
+                    table.add_row(row![
+                        b->total.label,
+                        Fg->account.format_value(total.value),
+                        "",
+                        "",
+                        "",
+                        ""
+                    ]);
+                } else {
+                    table.add_row(row![
+                        b->total.label,
+                        Fr->account.format_value(total.value),
+                        "",
+                        "",
+                        "",
+                        ""
+                    ]);
+                }
             }
 
-            table.printstd();
+            if is_csv {
+                 let mut wtr = WriterBuilder::new()
+                    .quote_style(QuoteStyle::NonNumeric)
+                    .from_writer(io::stdout());
+
+                table.to_csv_writer(wtr);
+            } else {
+                table.printstd();
+            }
         } else {
             // Help mode
             println!("How to use: bmoney movimentations list [account id] [from] [to]");

@@ -11,8 +11,8 @@ extern crate json;
 extern crate uuid;
 #[macro_use]
 extern crate prettytable;
-extern crate colored;
 extern crate chrono;
+extern crate csv;
 
 mod ui;
 mod backend;
@@ -37,9 +37,19 @@ fn main() {
         args.push("[action]".to_string());
     }
 
+    let mut is_csv = false;
+
+    for (i, param) in args.clone().iter().enumerate() {
+        if param == "--use-csv" {
+            is_csv = true;
+            args.remove(i);
+            break;
+        }
+    }
+
     if args[1] == "accounts" {
         if args[2] == "list" {
-            AccountsUI::list(storage);
+            AccountsUI::list(storage, args[3..].to_vec(), is_csv);
         } else if args[2] == "add" {
             AccountsUI::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {
@@ -51,7 +61,7 @@ fn main() {
         }
     } else if args[1] == "contacts" {
         if args[2] == "list" {
-            ContactsUI::list(storage);
+            ContactsUI::list(storage, args[3..].to_vec(), is_csv);
         } else if args[2] == "add" {
             ContactsUI::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {
@@ -63,7 +73,7 @@ fn main() {
         }
     } else if args[1] == "movimentations" {
         if args[2] == "list" {
-            MovimentationsUI::list(storage, args[3..].to_vec());
+            MovimentationsUI::list(storage, args[3..].to_vec(), is_csv);
         } else if args[2] == "add" {
             MovimentationsUI::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {

@@ -6,8 +6,8 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use colored::*;
-use prettytable::Table;
+use prettytable::*;
+use csv::*;
 use std::io;
 use chrono::NaiveDate;
 
@@ -19,30 +19,44 @@ pub struct AccountsUI {}
 impl AccountsUI {
 
     // List of user accounts
-    pub fn list(mut storage: Storage) {
+    pub fn list(mut storage: Storage, _params: Vec<String>, is_csv: bool) {
 
         let accounts = Account::get_accounts(&mut storage);
         let mut table = Table::new();
+        table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
 
-        table.add_row(row!["Name".bold(), "Bank".bold(), "Opening Balance".bold(), "Opening Balance Date".bold(), "#id".bold()]);
+        table.set_titles(row![b->"Name", b->"Bank", b->"Opening Balance", b->"Opening Balance Date", b->"#id"]);
 
         for account in accounts {
 
-            let obcolor = match account.open_balance >= 0.0 {
-                true => "green",
-                false => "red"
-            };
-
-            table.add_row(row![
-                account.name,
-                account.bank,
-                account.open_balance_formmated().color(obcolor),
-                account.open_balance_date.unwrap(),
-                account.uuid
-            ]);
+            if account.open_balance >= 0.0 {
+                table.add_row(row![
+                    account.name,
+                    account.bank,
+                    Fg->account.open_balance_formmated(),
+                    account.open_balance_date.unwrap(),
+                    account.uuid
+                ]);
+            } else {
+                table.add_row(row![
+                    account.name,
+                    account.bank,
+                    Fr->account.open_balance_formmated(),
+                    account.open_balance_date.unwrap(),
+                    account.uuid
+                ]);
+            }
         }
 
-        table.printstd();
+        if is_csv {
+             let mut wtr = WriterBuilder::new()
+                .quote_style(QuoteStyle::NonNumeric)
+                .from_writer(io::stdout());
+
+            table.to_csv_writer(wtr);
+        } else {
+            table.printstd();
+        }
     }
 
     // Create new account

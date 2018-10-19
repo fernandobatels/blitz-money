@@ -6,8 +6,8 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use colored::*;
-use prettytable::Table;
+use prettytable::*;
+use csv::*;
 use std::io;
 
 use backend::contacts::Contact;
@@ -18,12 +18,13 @@ pub struct ContactsUI {}
 impl ContactsUI {
 
     // List of user contacts
-    pub fn list(mut storage: Storage) {
+    pub fn list(mut storage: Storage, _params: Vec<String>, is_csv: bool) {
 
         let contacts = Contact::get_contacts(&mut storage);
         let mut table = Table::new();
+        table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
 
-        table.add_row(row!["Name".bold(), "City".bold(), "#id".bold()]);
+        table.set_titles(row![b->"Name", b->"City", b->"#id"]);
 
         for contact in contacts {
 
@@ -34,7 +35,16 @@ impl ContactsUI {
             ]);
         }
 
-        table.printstd();
+
+        if is_csv {
+             let mut wtr = WriterBuilder::new()
+                .quote_style(QuoteStyle::NonNumeric)
+                .from_writer(io::stdout());
+
+            table.to_csv_writer(wtr);
+        } else {
+            table.printstd();
+        }
     }
 
     // Create new contact

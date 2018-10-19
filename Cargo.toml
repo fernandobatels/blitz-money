@@ -11,5 +11,5 @@ authors = ["Luis Fernando Batels <luisfbatels@gmail.com>"]
 json = "*"
 uuid = { version = "0.7", features = ["v4"] }
 prettytable-rs = "^0.8"
-colored = "1.6"
 chrono = "0.4"
+csv = "1"
