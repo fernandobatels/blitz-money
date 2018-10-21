@@ -129,12 +129,23 @@ impl Movimentations {
 
             let description = Input::read("Movimentation description".to_string(), true, None);
 
-            let account_uuid = Input::read("Account".to_string(), true, None);
+            let mut accounts: Vec<(String, String)> = vec![];
+            for ac in Account::get_accounts(&mut storage) {
+                accounts.push((ac.uuid, ac.name));
+            }
+
+            let account_uuid = Input::read_option("Account".to_string(), true, None, accounts);
             let account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
             let value = Input::read_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, None, account.clone().unwrap().currency);
 
-            let contact_uuid = Input::read("Contact".to_string(), true, None);
+
+            let mut contacts: Vec<(String, String)> = vec![];
+            for ac in Contact::get_contacts(&mut storage) {
+                contacts.push((ac.uuid, ac.name));
+            }
+
+            let contact_uuid = Input::read_option("Contact".to_string(), true, None, contacts);
             let contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
 
             let deadline = Input::read_date("Deadline".to_string(), true, None);
@@ -196,12 +207,22 @@ impl Movimentations {
 
             movimentation.description = Input::read("Movimentation description".to_string(), true, Some(movimentation.description));
 
-            let account_uuid = Input::read("Account".to_string(), true, Some(movimentation.account.clone().unwrap().uuid));
+            let mut accounts: Vec<(String, String)> = vec![];
+            for ac in Account::get_accounts(&mut storage) {
+                accounts.push((ac.uuid, ac.name));
+            }
+
+            let account_uuid = Input::read_option("Account".to_string(), true, Some(movimentation.account.clone().unwrap().uuid), accounts);
             movimentation.account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
             movimentation.value = Input::read_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, Some(movimentation.value), movimentation.account.clone().unwrap().currency);
 
-            let contact_uuid = Input::read("Contact".to_string(), true, Some(movimentation.contact.clone().unwrap().uuid));
+            let mut contacts: Vec<(String, String)> = vec![];
+            for ac in Contact::get_contacts(&mut storage) {
+                contacts.push((ac.uuid, ac.name));
+            }
+
+            let contact_uuid = Input::read_option("Contact".to_string(), true, Some(movimentation.contact.clone().unwrap().uuid), contacts);
             movimentation.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
 
             movimentation.deadline = Input::read_date("Deadline".to_string(), true, movimentation.deadline);

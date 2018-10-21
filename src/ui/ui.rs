@@ -120,6 +120,36 @@ impl Input {
         money
     }
 
+    // Read a option from stdin
+    pub fn read_option(mut label: String, is_required: bool, current_value: Option<String>, options: Vec<(String, String)>) -> String {
+
+        if options.len() == 0 {
+            panic!("No options avaliable for {}", label);
+        }
+
+        label.push_str(", options avaliable:");
+        for (i, (_, option)) in options.iter().enumerate() {
+            label.push_str(&format!("\n[{}] => {}", i, option));
+        }
+        label.push_str("\nSelect one or input the full uuid");
+
+        let value = Input::read(label, is_required, current_value);
+
+        // We can't run panic because the user can input a uuid
+        let selected = match value.parse::<usize>() {
+            Ok(val) => val,
+            Err(_e) => options.len() + 1
+        };
+
+        // If the user input a valid index
+        if selected < options.len() {
+            let (uuid, _) = options[selected].clone();
+            return uuid;
+        }
+
+        value
+    }
+
     // Parse the param to a string
     pub fn param(label: String, is_required: bool, params: Vec<String>, position: usize) -> String {
 
