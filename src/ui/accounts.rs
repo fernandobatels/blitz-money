@@ -6,12 +6,11 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use std::io;
 use chrono::NaiveDate;
 
 use backend::accounts::Account;
 use backend::storage::Storage;
-use ui::ui::Output;
+use ui::ui::*;
 
 pub struct Accounts {}
 
@@ -55,49 +54,36 @@ impl Accounts {
         if params.len() == 5 {
             // Shell mode
 
+            let name = Input::param("Account name".to_string(), true, params.clone(), 0);
+            let bank = Input::param("Bank".to_string(), true, params.clone(), 1);
+            let obd = Input::param_date("Opening Balance Date".to_string(), true, params.clone(), 2);
+            let currency = Input::param("Currency(eg: $, R$...)".to_string(), true, params.clone(), 4);
+            let ob = Input::param_money("Opening Balance".to_string(), true, params.clone(), 3);
+
             Account::store_account(&mut storage, Account {
                 uuid: "".to_string(),
-                bank: params[1].trim().to_string(),
-                name: params[0].trim().to_string(),
-                open_balance: params[3].trim().parse::<f32>().unwrap(),
-                open_balance_date: Some(NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap()),
-                currency: params[4].trim().to_string()
+                bank: bank,
+                name: name,
+                open_balance: ob,
+                open_balance_date: obd,
+                currency: currency
             });
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            println!("Account name:");
-            let mut name = String::new();
-            io::stdin().read_line(&mut name)
-                .expect("Failed to read name");
-
-            println!("Bank:");
-            let mut bank = String::new();
-            io::stdin().read_line(&mut bank)
-                .expect("Failed to read bank");
-
-            println!("Opening Balance Date(format YYYY-MM-DD):");
-            let mut obd = String::new();
-            io::stdin().read_line(&mut obd)
-                .expect("Failed to read opening balance date");
-
-            println!("Opening Balance:");
-            let mut ob = String::new();
-            io::stdin().read_line(&mut ob)
-                .expect("Failed to read opening balance");
-
-            println!("Currency(eg: $, R$...):");
-            let mut currency = String::new();
-            io::stdin().read_line(&mut currency)
-                .expect("Failed to read currency");
+            let name = Input::read("Account name".to_string(), true, None);
+            let bank = Input::read("Bank".to_string(), true, None);
+            let obd = Input::read_date("Opening Balance Date".to_string(), true, None);
+            let currency = Input::read("Currency(eg: $, R$...)".to_string(), true, None);
+            let ob = Input::read_money("Opening Balance".to_string(), true, None, currency.clone());
 
             Account::store_account(&mut storage, Account {
                 uuid: "".to_string(),
-                bank: bank.trim().to_string(),
-                name: name.trim().to_string(),
-                open_balance: ob.trim().parse::<f32>().unwrap(),
-                open_balance_date: Some(NaiveDate::parse_from_str(&obd.trim().to_string(), "%Y-%m-%d").unwrap()),
-                currency: currency.trim().to_string()
+                bank: bank,
+                name: name,
+                open_balance: ob,
+                open_balance_date: obd,
+                currency: currency
             });
         } else {
             // Help mode
@@ -116,15 +102,15 @@ impl Accounts {
                 .expect("Account not found");
 
             if params[1] == "name" {
-                account.name = params[2].trim().to_string();
+                account.name = Input::param("Account name".to_string(), true, params.clone(), 2);
             } else if params[1] == "bank" {
-                account.bank = params[2].trim().to_string();
+                account.bank = Input::param("Bank".to_string(), true, params.clone(), 2);
             } else if params[1] == "obd" {
-                account.open_balance_date = Some(NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap());
+                account.open_balance_date = Input::param_date("Opening Balance Date".to_string(), true, params.clone(), 2);
             } else if params[1] == "ob" {
-                account.open_balance = params[2].trim().parse::<f32>().unwrap();
+                account.open_balance = Input::param_money("Opening Balance".to_string(), true, params.clone(), 2);
             } else if params[1] == "currency" {
-                account.currency = params[2].trim().to_string();
+                account.currency = Input::param("Currency(eg: $, R$...)".to_string(), true, params.clone(), 2);
             } else {
                 panic!("Field not found!");
             }
@@ -134,53 +120,16 @@ impl Accounts {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            println!("Account id:");
-            let mut id = String::new();
-            io::stdin().read_line(&mut id)
-                .expect("Failed to read id");
+            let id = Input::read("Account id".to_string(), true, None);
 
             let mut account = Account::get_account(&mut storage, id.trim().to_string())
                 .expect("Account not found");
 
-            println!("Account name: {}(keep blank for skip)", account.name);
-            let mut name = String::new();
-            io::stdin().read_line(&mut name)
-                .expect("Failed to read name");
-            if !name.trim().is_empty() {
-                account.name = name.trim().to_string();
-            }
-
-            println!("Bank: {}(keep blank for skip)", account.bank);
-            let mut bank = String::new();
-            io::stdin().read_line(&mut bank)
-                .expect("Failed to read bank");
-            if !bank.trim().is_empty() {
-                account.bank = bank.trim().to_string();
-            }
-
-            println!("Opening Balance Date(format YYYY-MM-DD): {}(keep blank for skip)", account.open_balance_date.unwrap());
-            let mut obd = String::new();
-            io::stdin().read_line(&mut obd)
-                .expect("Failed to read opening balance date");
-            if !obd.trim().is_empty() {
-                account.open_balance_date = Some(NaiveDate::parse_from_str(&obd.trim().to_string(), "%Y-%m-%d").unwrap());
-            }
-
-            println!("Opening Balance: {}(keep blank for skip)", account.open_balance);
-            let mut ob = String::new();
-            io::stdin().read_line(&mut ob)
-                .expect("Failed to read opening balance");
-            if !ob.trim().is_empty() {
-                account.open_balance = ob.trim().parse::<f32>().unwrap();
-            }
-
-            println!("Currency(eg: $, R$...): {}(keep blank for skip)", account.currency);
-            let mut currency = String::new();
-            io::stdin().read_line(&mut currency)
-                .expect("Failed to read currency");
-            if !currency.trim().is_empty() {
-                account.currency = currency.trim().to_string();
-            }
+            account.name = Input::read("Account name".to_string(), true, Some(account.name));
+            account.bank = Input::read("Bank".to_string(), true, Some(account.bank));
+            account.open_balance_date = Input::read_date("Opening Balance Date".to_string(), true, account.open_balance_date);
+            account.currency = Input::read("Currency(eg: $, R$...)".to_string(), true, Some(account.currency));
+            account.open_balance = Input::read_money("Opening Balance".to_string(), true, Some(account.open_balance), account.currency.clone());
 
             Account::store_account(&mut storage, account);
 
