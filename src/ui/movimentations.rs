@@ -7,13 +7,12 @@
 ///
 
 use chrono::{Local, prelude::Datelike, NaiveDate};
-use std::io;
 
 use backend::movimentations::Movimentation;
 use backend::accounts::Account;
 use backend::contacts::Contact;
 use backend::storage::Storage;
-use ui::ui::Output;
+use ui::ui::*;
 
 pub struct Movimentations {}
 
@@ -101,62 +100,54 @@ impl Movimentations {
 
         if params.len() == 6 {
             // Shell mode
-            let account = Some(Account::get_account(&mut storage, params[2].trim().to_string()).unwrap());
-            let contact = Some(Contact::get_contact(&mut storage, params[3].trim().to_string()).unwrap());
+
+            let description = Input::param("Movimentation description".to_string(), true, params.clone(), 0);
+
+            let account_uuid = Input::param("Account".to_string(), true, params.clone(), 2);
+            let account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
+
+            let value = Input::param_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, params.clone(), 1);
+
+            let contact_uuid = Input::param("Contact".to_string(), true, params.clone(), 3);
+            let contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
+
+            let deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 4);
+            let paid_in = Input::param("Paid in".to_string(), false, params.clone(), 5);
 
             Movimentation::store_movimentation(&mut storage, Movimentation {
                 uuid: "".to_string(),
-                description: params[0].trim().to_string(),
-                value: params[1].trim().parse::<f32>().unwrap(),
+                description: description,
+                value: value,
                 account: account,
                 contact: contact,
-                deadline: Some(NaiveDate::parse_from_str(&params[4].trim().to_string(), "%Y-%m-%d").unwrap()),
-                paid_in: params[5].trim().to_string(),
+                deadline: deadline,
+                paid_in: paid_in,
                 created_at: Some(Local::now()),
             });
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            println!("Movimentation description:");
-            let mut description = String::new();
-            io::stdin().read_line(&mut description)
-                .expect("Failed to read description");
+            let description = Input::read("Movimentation description".to_string(), true, None);
 
-            println!("Value(>= 0 for credit and < 0 for debit):");
-            let mut value = String::new();
-            io::stdin().read_line(&mut value)
-                .expect("Failed to read value");
+            let account_uuid = Input::read("Account".to_string(), true, None);
+            let account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
-            println!("Account:");
-            let mut account_uuid = String::new();
-            io::stdin().read_line(&mut account_uuid)
-                .expect("Failed to read account");
-            let account = Some(Account::get_account(&mut storage, account_uuid.trim().to_string()).unwrap());
+            let value = Input::read_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, None, account.clone().unwrap().currency);
 
-            println!("Contact:");
-            let mut contact_uuid = String::new();
-            io::stdin().read_line(&mut contact_uuid)
-                .expect("Failed to read contact");
-            let contact = Some(Contact::get_contact(&mut storage, contact_uuid.trim().to_string()).unwrap());
+            let contact_uuid = Input::read("Contact".to_string(), true, None);
+            let contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
 
-            println!("Deadline(format YYYY-MM-DD):");
-            let mut deadline = String::new();
-            io::stdin().read_line(&mut deadline)
-                .expect("Failed to read deadline");
-
-            println!("Paid in(format YYYY-MM-DD):");
-            let mut paid_in = String::new();
-            io::stdin().read_line(&mut paid_in)
-                .expect("Failed to read paid in");
+            let deadline = Input::read_date("Deadline".to_string(), true, None);
+            let paid_in = Input::read("Paid in".to_string(), false, None);
 
             Movimentation::store_movimentation(&mut storage, Movimentation {
                 uuid: "".to_string(),
-                description: description.trim().to_string(),
-                value: value.trim().parse::<f32>().unwrap(),
+                description: description,
+                value: value,
                 account: account,
                 contact: contact,
-                deadline: Some(NaiveDate::parse_from_str(&deadline.trim().to_string(), "%Y-%m-%d").unwrap()),
-                paid_in: paid_in.trim().to_string(),
+                deadline: deadline,
+                paid_in: paid_in,
                 created_at: Some(Local::now()),
             });
         } else {
@@ -176,17 +167,19 @@ impl Movimentations {
                 .expect("Movimentation not found");
 
             if params[1] == "description" {
-                movimentation.description = params[2].trim().to_string();
+                movimentation.description = Input::param("Movimentation description".to_string(), true, params.clone(), 2);
             } else if params[1] == "value" {
-                movimentation.value = params[2].trim().parse::<f32>().unwrap();
+                movimentation.value = Input::param_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, params.clone(), 2);
             } else if params[1] == "account" {
-                movimentation.account = Some(Account::get_account(&mut storage, params[2].trim().to_string()).unwrap());
+                let account_uuid = Input::param("Account".to_string(), true, params.clone(), 2);
+                movimentation.account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
             } else if params[1] == "contact" {
-                movimentation.contact = Some(Contact::get_contact(&mut storage, params[2].trim().to_string()).unwrap());
+                let contact_uuid = Input::param("Contact".to_string(), true, params.clone(), 2);
+                movimentation.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
             } else if params[1] == "deadline" {
-                movimentation.deadline = Some(NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap());
+                movimentation.deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 2);
             } else if params[1] == "paid_in" {
-                movimentation.paid_in = params[2].trim().to_string();
+                movimentation.paid_in = Input::param("Paid in".to_string(), false, params.clone(), 2);
             } else {
                 panic!("Field not found!");
             }
@@ -196,61 +189,23 @@ impl Movimentations {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            println!("Movimentation id:");
-            let mut id = String::new();
-            io::stdin().read_line(&mut id)
-                .expect("Failed to read id");
+            let id = Input::read("Movimentation id".to_string(), true, None);
 
-            let mut movimentation = Movimentation::get_movimentation(&mut storage, id.trim().to_string())
+            let mut movimentation = Movimentation::get_movimentation(&mut storage, id)
                 .expect("Movimentation not found");
 
-            println!("Movimentation description: {}(keep blank for skip)", movimentation.description);
-            let mut description = String::new();
-            io::stdin().read_line(&mut description)
-                .expect("Failed to read description");
-            if !description.trim().is_empty() {
-                movimentation.description = description.trim().to_string();
-            }
+            movimentation.description = Input::read("Movimentation description".to_string(), true, Some(movimentation.description));
 
-            println!("Value: {}(keep blank for skip)", movimentation.value);
-            let mut value = String::new();
-            io::stdin().read_line(&mut value)
-                .expect("Failed to read value");
-            if !value.trim().is_empty() {
-                movimentation.value = value.trim().parse::<f32>().unwrap();
-            }
+            let account_uuid = Input::read("Account".to_string(), true, Some(movimentation.account.clone().unwrap().uuid));
+            movimentation.account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
-            println!("Account: {}(keep blank for skip)", movimentation.account.clone().unwrap().name);
-            let mut account = String::new();
-            io::stdin().read_line(&mut account)
-                .expect("Failed to read account");
-            if !account.trim().is_empty() {
-                movimentation.account = Some(Account::get_account(&mut storage, account.trim().to_string()).unwrap());
-            }
+            movimentation.value = Input::read_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, Some(movimentation.value), movimentation.account.clone().unwrap().currency);
 
-            println!("Contact: {}(keep blank for skip)", movimentation.contact.clone().unwrap().name);
-            let mut contact = String::new();
-            io::stdin().read_line(&mut contact)
-                .expect("Failed to read contact");
-            if !contact.trim().is_empty() {
-                movimentation.contact = Some(Contact::get_contact(&mut storage, contact.trim().to_string()).unwrap());
-            }
+            let contact_uuid = Input::read("Contact".to_string(), true, Some(movimentation.contact.clone().unwrap().uuid));
+            movimentation.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
 
-            println!("Deadline(format YYYY-MM-DD): {}(keep blank for skip)", movimentation.deadline.unwrap());
-            let mut deadline = String::new();
-            io::stdin().read_line(&mut deadline)
-                .expect("Failed to read deadline");
-            if !deadline.trim().is_empty() {
-                movimentation.deadline = Some(NaiveDate::parse_from_str(&deadline.trim().to_string(), "%Y-%m-%d").unwrap());
-            }
-
-            println!("Paid in(format YYYY-MM-DD): {}(keep blank for skip)", movimentation.paid_in);
-            let mut paid_in = String::new();
-            io::stdin().read_line(&mut paid_in)
-                .expect("Failed to read paid_in");
-            if !paid_in.trim().is_empty() {
-                movimentation.paid_in = paid_in.trim().to_string();
-            }
+            movimentation.deadline = Input::read_date("Deadline".to_string(), true, movimentation.deadline);
+            movimentation.paid_in = Input::read("Paid in".to_string(), false, Some(movimentation.paid_in));
 
             Movimentation::store_movimentation(&mut storage, movimentation);
         } else {

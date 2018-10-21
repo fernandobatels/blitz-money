@@ -6,11 +6,9 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use std::io;
-
 use backend::contacts::Contact;
 use backend::storage::Storage;
-use ui::ui::Output;
+use ui::ui::*;
 
 pub struct Contacts {}
 
@@ -42,28 +40,24 @@ impl Contacts {
         if params.len() == 2 {
             // Shell mode
 
+            let name = Input::param("Contact name".to_string(), true, params.clone(), 0);
+            let city = Input::param("City".to_string(), true, params.clone(), 1);
+
             Contact::store_contact(&mut storage, Contact {
                 uuid: "".to_string(),
-                city_location: params[1].trim().to_string(),
-                name: params[0].trim().to_string(),
+                city_location: city,
+                name: name,
             });
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            println!("Contact name:");
-            let mut name = String::new();
-            io::stdin().read_line(&mut name)
-                .expect("Failed to read name");
-
-            println!("City:");
-            let mut city_location = String::new();
-            io::stdin().read_line(&mut city_location)
-                .expect("Failed to read city");
+            let name = Input::read("Contact name".to_string(), true, None);
+            let city = Input::read("City".to_string(), true, None);
 
             Contact::store_contact(&mut storage, Contact {
                 uuid: "".to_string(),
-                city_location: city_location.trim().to_string(),
-                name: name.trim().to_string(),
+                city_location: city,
+                name: name,
             });
         } else {
             // Help mode
@@ -82,9 +76,9 @@ impl Contacts {
                 .expect("Contact not found");
 
             if params[1] == "name" {
-                contact.name = params[2].trim().to_string();
+                contact.name = Input::param("Contact name".to_string(), true, params.clone(), 2);
             } else if params[1] == "city" {
-                contact.city_location = params[2].trim().to_string();
+                contact.city_location = Input::param("City".to_string(), true, params.clone(), 2);
             } else {
                 panic!("Field not found!");
             }
@@ -94,29 +88,13 @@ impl Contacts {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            println!("Contact id:");
-            let mut id = String::new();
-            io::stdin().read_line(&mut id)
-                .expect("Failed to read id");
+            let id = Input::read("Contact id".to_string(), true, None);
 
-            let mut contact = Contact::get_contact(&mut storage, id.trim().to_string())
+            let mut contact = Contact::get_contact(&mut storage, id)
                 .expect("Contact not found");
 
-            println!("Contact name: {}(keep blank for skip)", contact.name);
-            let mut name = String::new();
-            io::stdin().read_line(&mut name)
-                .expect("Failed to read name");
-            if !name.trim().is_empty() {
-                contact.name = name.trim().to_string();
-            }
-
-            println!("City: {}(keep blank for skip)", contact.city_location);
-            let mut city_location = String::new();
-            io::stdin().read_line(&mut city_location)
-                .expect("Failed to read city_location");
-            if !city_location.trim().is_empty() {
-                contact.city_location = city_location.trim().to_string();
-            }
+            contact.name = Input::read("Contact name".to_string(), true, Some(contact.name));
+            contact.city_location = Input::read("City".to_string(), true, Some(contact.city_location));
 
             Contact::store_contact(&mut storage, contact);
         } else {

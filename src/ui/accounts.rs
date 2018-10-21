@@ -6,8 +6,6 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use chrono::NaiveDate;
-
 use backend::accounts::Account;
 use backend::storage::Storage;
 use ui::ui::*;
@@ -122,7 +120,7 @@ impl Accounts {
 
             let id = Input::read("Account id".to_string(), true, None);
 
-            let mut account = Account::get_account(&mut storage, id.trim().to_string())
+            let mut account = Account::get_account(&mut storage, id)
                 .expect("Account not found");
 
             account.name = Input::read("Account name".to_string(), true, Some(account.name));
