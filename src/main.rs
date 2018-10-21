@@ -18,9 +18,9 @@ mod ui;
 mod backend;
 
 use std::env;
-use ui::accounts::AccountsUI;
-use ui::contacts::ContactsUI;
-use ui::movimentations::MovimentationsUI;
+use ui::accounts::Accounts;
+use ui::contacts::Contacts;
+use ui::movimentations::Movimentations;
 use backend::storage::Storage;
 
 fn main() {
@@ -49,37 +49,37 @@ fn main() {
 
     if args[1] == "accounts" {
         if args[2] == "list" {
-            AccountsUI::list(storage, args[3..].to_vec(), is_csv);
+            Accounts::list(storage, args[3..].to_vec(), is_csv);
         } else if args[2] == "add" {
-            AccountsUI::add(storage, args[3..].to_vec());
+            Accounts::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {
-            AccountsUI::update(storage, args[3..].to_vec());
+            Accounts::update(storage, args[3..].to_vec());
         } else if args[2] == "rm" {
-            AccountsUI::rm(storage, args[3..].to_vec());
+            Accounts::rm(storage, args[3..].to_vec());
         } else {
             println!("How to use: bmoney accounts [list|add|update|rm]");
         }
     } else if args[1] == "contacts" {
         if args[2] == "list" {
-            ContactsUI::list(storage, args[3..].to_vec(), is_csv);
+            Contacts::list(storage, args[3..].to_vec(), is_csv);
         } else if args[2] == "add" {
-            ContactsUI::add(storage, args[3..].to_vec());
+            Contacts::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {
-            ContactsUI::update(storage, args[3..].to_vec());
+            Contacts::update(storage, args[3..].to_vec());
         } else if args[2] == "rm" {
-            ContactsUI::rm(storage, args[3..].to_vec());
+            Contacts::rm(storage, args[3..].to_vec());
         } else {
             println!("How to use: bmoney contacts [list|add|update|rm]");
         }
     } else if args[1] == "movimentations" {
         if args[2] == "list" {
-            MovimentationsUI::list(storage, args[3..].to_vec(), is_csv);
+            Movimentations::list(storage, args[3..].to_vec(), is_csv);
         } else if args[2] == "add" {
-            MovimentationsUI::add(storage, args[3..].to_vec());
+            Movimentations::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {
-            MovimentationsUI::update(storage, args[3..].to_vec());
+            Movimentations::update(storage, args[3..].to_vec());
         } else if args[2] == "rm" {
-            MovimentationsUI::rm(storage, args[3..].to_vec());
+            Movimentations::rm(storage, args[3..].to_vec());
         } else {
             println!("How to use: bmoney movimentations [list|add|update|rm]");
         }

@@ -6,24 +6,22 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use prettytable::*;
-use csv::*;
 use std::io;
 use chrono::NaiveDate;
 
 use backend::accounts::Account;
 use backend::storage::Storage;
+use ui::ui::Output;
 
-pub struct AccountsUI {}
+pub struct Accounts {}
 
-impl AccountsUI {
+impl Accounts {
 
     // List of user accounts
     pub fn list(mut storage: Storage, _params: Vec<String>, is_csv: bool) {
 
         let accounts = Account::get_accounts(&mut storage);
-        let mut table = Table::new();
-        table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+        let mut table = Output::new_table();
 
         table.set_titles(row![b->"Name", b->"Bank", b->"Opening Balance", b->"Opening Balance Date", b->"#id"]);
 
@@ -48,15 +46,7 @@ impl AccountsUI {
             }
         }
 
-        if is_csv {
-             let mut wtr = WriterBuilder::new()
-                .quote_style(QuoteStyle::NonNumeric)
-                .from_writer(io::stdout());
-
-            table.to_csv_writer(wtr);
-        } else {
-            table.printstd();
-        }
+        Output::print_table(table, is_csv);
     }
 
     // Create new account

@@ -6,23 +6,21 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use prettytable::*;
-use csv::*;
 use std::io;
 
 use backend::contacts::Contact;
 use backend::storage::Storage;
+use ui::ui::Output;
 
-pub struct ContactsUI {}
+pub struct Contacts {}
 
-impl ContactsUI {
+impl Contacts {
 
     // List of user contacts
     pub fn list(mut storage: Storage, _params: Vec<String>, is_csv: bool) {
 
         let contacts = Contact::get_contacts(&mut storage);
-        let mut table = Table::new();
-        table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+        let mut table = Output::new_table();
 
         table.set_titles(row![b->"Name", b->"City", b->"#id"]);
 
@@ -35,16 +33,7 @@ impl ContactsUI {
             ]);
         }
 
-
-        if is_csv {
-             let mut wtr = WriterBuilder::new()
-                .quote_style(QuoteStyle::NonNumeric)
-                .from_writer(io::stdout());
-
-            table.to_csv_writer(wtr);
-        } else {
-            table.printstd();
-        }
+        Output::print_table(table, is_csv);
     }
 
     // Create new contact

@@ -6,8 +6,6 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use prettytable::*;
-use csv::*;
 use chrono::{Local, prelude::Datelike, NaiveDate};
 use std::io;
 
@@ -15,10 +13,11 @@ use backend::movimentations::Movimentation;
 use backend::accounts::Account;
 use backend::contacts::Contact;
 use backend::storage::Storage;
+use ui::ui::Output;
 
-pub struct MovimentationsUI {}
+pub struct Movimentations {}
 
-impl MovimentationsUI {
+impl Movimentations {
 
     // List of user movimentations
     pub fn list(mut storage: Storage, params: Vec<String>, is_csv: bool) {
@@ -37,8 +36,7 @@ impl MovimentationsUI {
 
             let (movimentations, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to);
 
-            let mut table = Table::new();
-            table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+            let mut table = Output::new_table();
 
             table.set_titles(row![b->"Description", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"#id"]);
 
@@ -91,15 +89,7 @@ impl MovimentationsUI {
                 }
             }
 
-            if is_csv {
-                 let mut wtr = WriterBuilder::new()
-                    .quote_style(QuoteStyle::NonNumeric)
-                    .from_writer(io::stdout());
-
-                table.to_csv_writer(wtr);
-            } else {
-                table.printstd();
-            }
+            Output::print_table(table, is_csv);
         } else {
             // Help mode
             println!("How to use: bmoney movimentations list [account id] [from] [to]");
