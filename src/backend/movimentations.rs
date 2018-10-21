@@ -20,7 +20,7 @@ pub struct Movimentation {
    pub description: String,
    pub value: f32,
    pub deadline: Option<NaiveDate>,
-   pub paid_in: String,
+   pub paid_in: Option<NaiveDate>,
    pub created_at: Option<DateTime<Local>>,
 }
 
@@ -66,6 +66,11 @@ impl Model for Movimentation {
 
         let created_at = Some(row["created_at"].to_string().parse::<DateTime<Local>>().unwrap());
         let deadline = Some(NaiveDate::parse_from_str(&row["deadline"].to_string(), "%Y-%m-%d").unwrap());
+        let mut paid_in = None;
+
+        if !row["paid_in"].is_empty() {
+            paid_in = Some(NaiveDate::parse_from_str(&row["paid_in"].to_string(), "%Y-%m-%d").unwrap());
+        }
 
         Movimentation {
             uuid: uuid,
@@ -74,12 +79,18 @@ impl Model for Movimentation {
             description: row["description"].to_string(),
             value: row["value"].as_f32().unwrap(),
             deadline: deadline,
-            paid_in: row["paid_in"].to_string(),
+            paid_in: paid_in,
             created_at: created_at
         }
     }
 
     fn to_save(self) -> (String, bool, JsonValue) {
+
+        let mut paid_in = String::new();
+
+        if self.paid_in.is_some() {
+            paid_in = self.paid_in.unwrap().format("%Y-%m-%d").to_string();
+        }
 
         (self.uuid.clone(), self.uuid.is_empty(), object!{
             "account" => self.account.unwrap().uuid,
@@ -87,7 +98,7 @@ impl Model for Movimentation {
             "description" => self.description,
             "value" => self.value,
             "deadline" => self.deadline.unwrap().format("%Y-%m-%d").to_string(),
-            "paid_in" => self.paid_in,
+            "paid_in" => paid_in,
             "created_at" => self.created_at.unwrap().to_rfc3339().to_string(),
         })
     }
@@ -102,10 +113,10 @@ impl Movimentation {
 
     // Return the paid in formatted
     pub fn paid_in_formmated(&self) -> String {
-        if self.paid_in.is_empty() {
+        if self.paid_in.is_none() {
             return "(payable)".to_string();
         }
-        self.paid_in.clone()
+        self.paid_in.unwrap().to_string().clone()
     }
 
     // Return a list with all movimentations
@@ -139,7 +150,7 @@ impl Movimentation {
                 }
 
                 // Totals
-                if !line.paid_in.is_empty() {
+                if line.paid_in.is_some() {
 
                     totals[5].value += line.value;
 

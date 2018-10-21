@@ -112,7 +112,7 @@ impl Movimentations {
             let contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
 
             let deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 4);
-            let paid_in = Input::param("Paid in".to_string(), false, params.clone(), 5);
+            let paid_in = Input::param_date("Paid in".to_string(), false, params.clone(), 5);
 
             Movimentation::store_movimentation(&mut storage, Movimentation {
                 uuid: "".to_string(),
@@ -138,7 +138,7 @@ impl Movimentations {
             let contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
 
             let deadline = Input::read_date("Deadline".to_string(), true, None);
-            let paid_in = Input::read("Paid in".to_string(), false, None);
+            let paid_in = Input::read_date("Paid in".to_string(), false, None);
 
             Movimentation::store_movimentation(&mut storage, Movimentation {
                 uuid: "".to_string(),
@@ -179,7 +179,7 @@ impl Movimentations {
             } else if params[1] == "deadline" {
                 movimentation.deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 2);
             } else if params[1] == "paid_in" {
-                movimentation.paid_in = Input::param("Paid in".to_string(), false, params.clone(), 2);
+                movimentation.paid_in = Input::param_date("Paid in".to_string(), false, params.clone(), 2);
             } else {
                 panic!("Field not found!");
             }
@@ -205,7 +205,7 @@ impl Movimentations {
             movimentation.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
 
             movimentation.deadline = Input::read_date("Deadline".to_string(), true, movimentation.deadline);
-            movimentation.paid_in = Input::read("Paid in".to_string(), false, Some(movimentation.paid_in));
+            movimentation.paid_in = Input::read_date("Paid in".to_string(), false, movimentation.paid_in);
 
             Movimentation::store_movimentation(&mut storage, movimentation);
         } else {
