@@ -115,14 +115,13 @@ impl Movimentations {
             let paid_in = Input::param_date("Paid in".to_string(), false, params.clone(), 5);
 
             Movimentation::store_movimentation(&mut storage, Movimentation {
-                uuid: "".to_string(),
                 description: description,
                 value: value,
                 account: account,
                 contact: contact,
                 deadline: deadline,
                 paid_in: paid_in,
-                created_at: Some(Local::now()),
+                ..Default::default()
             });
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
@@ -152,14 +151,13 @@ impl Movimentations {
             let paid_in = Input::read_date("Paid in".to_string(), false, None);
 
             Movimentation::store_movimentation(&mut storage, Movimentation {
-                uuid: "".to_string(),
                 description: description,
                 value: value,
                 account: account,
                 contact: contact,
                 deadline: deadline,
                 paid_in: paid_in,
-                created_at: Some(Local::now()),
+                ..Default::default()
             });
         } else {
             // Help mode

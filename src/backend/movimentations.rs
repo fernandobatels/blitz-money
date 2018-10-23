@@ -12,7 +12,7 @@ use backend::contacts::*;
 use chrono::{Local, DateTime, NaiveDate};
 use json::JsonValue;
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Movimentation {
    pub uuid: String,
    pub account: Option<Account>,
@@ -22,6 +22,25 @@ pub struct Movimentation {
    pub deadline: Option<NaiveDate>,
    pub paid_in: Option<NaiveDate>,
    pub created_at: Option<DateTime<Local>>,
+   pub updated_at: Option<DateTime<Local>>, // Last update
+}
+
+impl Default for Movimentation {
+
+    // Default values, duh
+    fn default() -> Movimentation {
+        Movimentation {
+            uuid: "".to_string(),
+            description: "".to_string(),
+            value: 0.0,
+            account: None,
+            contact: None,
+            deadline: None,
+            paid_in: None,
+            created_at: Some(Local::now()),
+            updated_at: None
+        }
+    }
 }
 
 pub struct Total {
@@ -53,10 +72,6 @@ impl Model for Movimentation {
             panic!("Account not found into a row(id {}) movimentation", uuid);
         }
 
-        if row["paid_in"].is_null() {
-            panic!("Paid in not found into a row(id {}) movimentation", uuid);
-        }
-
         if row["created_at"].is_null() {
             panic!("Created at not found into a row(id {}) movimentation", uuid);
         }
@@ -67,9 +82,14 @@ impl Model for Movimentation {
         let created_at = Some(row["created_at"].to_string().parse::<DateTime<Local>>().unwrap());
         let deadline = Some(NaiveDate::parse_from_str(&row["deadline"].to_string(), "%Y-%m-%d").unwrap());
         let mut paid_in = None;
+        let mut updated_at = None;
 
         if !row["paid_in"].is_empty() {
             paid_in = Some(NaiveDate::parse_from_str(&row["paid_in"].to_string(), "%Y-%m-%d").unwrap());
+        }
+
+        if !row["updated_at"].is_empty() {
+            updated_at = Some(row["updated_at"].to_string().parse::<DateTime<Local>>().unwrap());
         }
 
         Movimentation {
@@ -80,27 +100,31 @@ impl Model for Movimentation {
             value: row["value"].as_f32().unwrap(),
             deadline: deadline,
             paid_in: paid_in,
-            created_at: created_at
+            created_at: created_at,
+            updated_at: updated_at
         }
     }
 
     fn to_save(self) -> (String, bool, JsonValue) {
 
-        let mut paid_in = String::new();
-
-        if self.paid_in.is_some() {
-            paid_in = self.paid_in.unwrap().format("%Y-%m-%d").to_string();
-        }
-
-        (self.uuid.clone(), self.uuid.is_empty(), object!{
+        let mut ob = object!{
             "account" => self.account.unwrap().uuid,
             "contact" => self.contact.unwrap().uuid,
             "description" => self.description,
             "value" => self.value,
             "deadline" => self.deadline.unwrap().format("%Y-%m-%d").to_string(),
-            "paid_in" => paid_in,
             "created_at" => self.created_at.unwrap().to_rfc3339().to_string(),
-        })
+        };
+
+        if self.paid_in.is_some() {
+            ob["paid_in"] = self.paid_in.unwrap().format("%Y-%m-%d").to_string().into();
+        }
+
+        if !self.uuid.is_empty() {
+            ob["updated_at"] = Local::now().to_rfc3339().to_string().into();
+        }
+
+        (self.uuid.clone(), self.uuid.is_empty(), ob)
     }
 }
 
