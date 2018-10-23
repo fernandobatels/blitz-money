@@ -169,7 +169,35 @@ impl Movimentations {
     // Update a existing movimentation
     pub fn update(mut storage: Storage, params: Vec<String>) {
 
-        if params.len() == 3 {
+        if params.len() >= 2 && params[1] == "pay" {
+            // Pay mode
+
+            let mut movimentation = Movimentation::get_movimentation(&mut storage, params[0].trim().to_string())
+                .expect("Movimentation not found");
+
+            // Update the paid date
+            if params.len() >= 3 && params[2] != "today" {
+                if params[2].is_empty() || params[2] == "unpaid" {
+                    movimentation.paid_in = None;
+                } else {
+                    // Is a date value
+                    movimentation.paid_in = Some(NaiveDate::parse_from_str(&params[2], "%Y-%m-%d")
+                        .expect("Couldn't parse the string to date. The format is YYYY-MM-DD"));
+                }
+            } else {
+                // No date, no empty or the 'today' value we set this movimentation as paid today
+                movimentation.paid_in = Some(Local::today().naive_local());
+            }
+
+            // Update the value
+            if params.len() >= 4 {
+                movimentation.value = params[3].parse::<f32>()
+                    .expect("Couldn't parse the string to money. The format is 00000.00");
+            }
+
+            Movimentation::store_movimentation(&mut storage, movimentation);
+
+        } else if params.len() == 3 {
             // Shell mode
 
             let mut movimentation = Movimentation::get_movimentation(&mut storage, params[0].trim().to_string())
@@ -230,7 +258,8 @@ impl Movimentations {
         } else {
             // Help mode
             println!("How to use: bmoney movimentations update [id] [description|value|account|contact|deadline|paid] [value]");
-            println!("Or with interactive mode: bmoney movimentations update -i")
+            println!("Or with interactive mode: bmoney movimentations update -i");
+            println!("Or for pay mode: bmoney movimentations update [id] pay [\"\"|YYYY-MM-DD|unpaid|today](optional) [new_value](optional)");
         }
     }
 
