@@ -18,7 +18,7 @@ pub struct Contact {
 
 impl Model for Contact {
 
-    fn new(row: JsonValue, uuid: String, _storage: &mut Storage) -> Contact {
+    fn new(row: JsonValue, uuid: String, _storage: &mut Storage, _can_recursive: bool) -> Contact {
 
         if row["name"].is_null() {
             panic!("Name not found into a row(id {}) contact", uuid);

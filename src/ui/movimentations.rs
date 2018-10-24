@@ -57,6 +57,11 @@ impl Movimentations {
                     row.set_cell(cell!(Fr->movimentation.value_formmated()), 2)
                         .expect("Unable to set value on movimentation");
                 }
+
+                if movimentation.transaction.is_some() {
+                    row.set_cell(cell!("T"), 1)
+                        .expect("Unable to set T on movimentation");
+                }
             }
 
 

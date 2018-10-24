@@ -26,13 +26,14 @@ pub struct Data<'a> {
     section: String,
     storage: &'a mut Storage,
     need_find_section: bool,
-    last_position: usize
+    last_position: usize,
+    pub can_recursive: bool
 }
 
 pub trait Model {
 
     // For set data into struct
-    fn new(row: JsonValue, uuid: String, storage: &mut Storage) -> Self;
+    fn new(row: JsonValue, uuid: String, storage: &mut Storage, can_recursive: bool) -> Self;
 
     // Parse to storage data
     fn to_save(self) -> (String, bool, JsonValue);
@@ -111,7 +112,7 @@ impl Storage {
 
     // Return struct for read the data of the section
     pub fn get_section_data(&mut self, name: String) -> Data {
-        Data { section: name, storage: self, last_position: 0, need_find_section: true }
+        Data { section: name, storage: self, last_position: 0, need_find_section: true, can_recursive: true }
     }
 
     // Persist current lines on storage
@@ -194,7 +195,7 @@ impl<'a> Data<'a> {
                     Err(e) => panic!("Couldn't parse the row: {}", e.description())
                 };
 
-                return Ok(M::new(row, uuid, self.storage));
+                return Ok(M::new(row, uuid, self.storage, self.can_recursive));
             }
         }
 

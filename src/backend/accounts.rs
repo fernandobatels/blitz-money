@@ -22,7 +22,7 @@ pub struct Account {
 
 impl Model for Account {
 
-    fn new(row: JsonValue, uuid: String, _storage: &mut Storage) -> Account {
+    fn new(row: JsonValue, uuid: String, _storage: &mut Storage, _can_recursive: bool) -> Account {
 
         if row["bank"].is_null() {
             panic!("Bank name not found into a row(id {}) account", uuid);

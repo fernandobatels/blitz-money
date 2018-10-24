@@ -23,6 +23,7 @@ pub struct Movimentation {
    pub paid_in: Option<NaiveDate>,
    pub created_at: Option<DateTime<Local>>,
    pub updated_at: Option<DateTime<Local>>, // Last update
+   pub transaction: Option<Box<Movimentation>>
 }
 
 impl Default for Movimentation {
@@ -38,7 +39,8 @@ impl Default for Movimentation {
             deadline: None,
             paid_in: None,
             created_at: Some(Local::now()),
-            updated_at: None
+            updated_at: None,
+            transaction: None
         }
     }
 }
@@ -50,7 +52,7 @@ pub struct Total {
 
 impl Model for Movimentation {
 
-    fn new(row: JsonValue, uuid: String, storage: &mut Storage) -> Movimentation {
+    fn new(row: JsonValue, uuid: String, storage: &mut Storage, can_recursive: bool) -> Movimentation {
 
         if row["description"].is_null() {
             panic!("Description not found into a row(id {}) movimentation", uuid);
@@ -76,33 +78,54 @@ impl Model for Movimentation {
             panic!("Created at not found into a row(id {}) movimentation", uuid);
         }
 
-        let account = Some(Account::get_account(storage, row["account"].to_string()).unwrap());
-        let contact = Some(Contact::get_contact(storage, row["contact"].to_string()).unwrap());
+        let mut mov = Movimentation {
+            uuid: uuid.clone(),
+            description: row["description"].to_string(),
+            value: row["value"].as_f32().unwrap(),
+            ..Default::default()
+        };
 
-        let created_at = Some(row["created_at"].to_string().parse::<DateTime<Local>>().unwrap());
-        let deadline = Some(NaiveDate::parse_from_str(&row["deadline"].to_string(), "%Y-%m-%d").unwrap());
-        let mut paid_in = None;
-        let mut updated_at = None;
+        mov.account = Some(Account::get_account(storage, row["account"].to_string()).unwrap());
+        mov.contact = Some(Contact::get_contact(storage, row["contact"].to_string()).unwrap());
+
+        mov.created_at = Some(row["created_at"].to_string().parse::<DateTime<Local>>().unwrap());
+        mov.deadline = Some(NaiveDate::parse_from_str(&row["deadline"].to_string(), "%Y-%m-%d").unwrap());
 
         if !row["paid_in"].is_empty() {
-            paid_in = Some(NaiveDate::parse_from_str(&row["paid_in"].to_string(), "%Y-%m-%d").unwrap());
+            mov.paid_in = Some(NaiveDate::parse_from_str(&row["paid_in"].to_string(), "%Y-%m-%d").unwrap());
         }
 
         if !row["updated_at"].is_empty() {
-            updated_at = Some(row["updated_at"].to_string().parse::<DateTime<Local>>().unwrap());
+            mov.updated_at = Some(row["updated_at"].to_string().parse::<DateTime<Local>>().unwrap());
         }
 
-        Movimentation {
-            uuid: uuid,
-            account: account,
-            contact: contact,
-            description: row["description"].to_string(),
-            value: row["value"].as_f32().unwrap(),
-            deadline: deadline,
-            paid_in: paid_in,
-            created_at: created_at,
-            updated_at: updated_at
+        if !row["transaction"].is_empty() && can_recursive {
+
+            let mut data = storage.get_section_data("movimentations".to_string());
+
+            if data.find_by_id(row["transaction"].to_string()) {
+
+                // This instruct the new() method of the othor
+                // movimentation for dont't run more recursive operations
+                data.can_recursive = false;
+
+                let mut other = data.next::<Movimentation>()
+                    .expect("Couldn't parse the other transaction");
+
+                // Update the current movimentation with link to
+                // movimentation of other account
+                mov.transaction = Some(Box::new(other));
+
+                // And link the movimentation of the oter account
+                // with this
+                other.transaction = Some(Box::new(mov.clone()));
+            } else {
+                panic!("Couldn't find the movimentation {} need by {}", row["transaction"], uuid);
+            }
         }
+
+
+        mov
     }
 
     fn to_save(self) -> (String, bool, JsonValue) {
