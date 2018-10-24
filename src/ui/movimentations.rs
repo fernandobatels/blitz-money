@@ -37,54 +37,46 @@ impl Movimentations {
 
             let mut table = Output::new_table();
 
-            table.set_titles(row![b->"Description", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"#id"]);
+            table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"#id"]);
 
             for movimentation in movimentations {
 
-                if movimentation.value >= 0.0 {
-                    table.add_row(row![
-                        movimentation.description,
-                        Fg->movimentation.value_formmated(),
-                        movimentation.deadline.unwrap(),
-                        movimentation.paid_in_formmated(),
-                        movimentation.contact.unwrap().name,
-                        movimentation.uuid
-                    ]);
-                } else {
-                    table.add_row(row![
-                        movimentation.description,
-                        Fr->movimentation.value_formmated(),
-                        movimentation.deadline.unwrap(),
-                        movimentation.paid_in_formmated(),
-                        movimentation.contact.unwrap().name,
-                        movimentation.uuid
-                    ]);
+                let mut row = table.add_row(row![
+                    movimentation.description,
+                    "C",
+                    Fg->movimentation.value_formmated(),
+                    movimentation.deadline.unwrap(),
+                    movimentation.paid_in_formmated(),
+                    movimentation.contact.clone().unwrap().name,
+                    movimentation.uuid
+                ]);
+
+                if movimentation.value < 0.0 {
+                    row.set_cell(cell!("D"), 1)
+                        .expect("Unable to set D on movimentation");
+                    row.set_cell(cell!(Fr->movimentation.value_formmated()), 2)
+                        .expect("Unable to set value on movimentation");
                 }
             }
 
 
-            table.add_row(row!["", "", "", "", "", ""]);
+            table.add_row(row!["", "", "", "", "", "", ""]);
 
             for total in totals {
 
-                if total.value >= 0.0 {
-                    table.add_row(row![
-                        b->total.label,
-                        Fg->account.format_value(total.value),
-                        "",
-                        "",
-                        "",
-                        ""
-                    ]);
-                } else {
-                    table.add_row(row![
-                        b->total.label,
-                        Fr->account.format_value(total.value),
-                        "",
-                        "",
-                        "",
-                        ""
-                    ]);
+                let mut row = table.add_row(row![
+                    b->total.label,
+                    "",
+                    Fg->account.format_value(total.value),
+                    "",
+                    "",
+                    "",
+                    ""
+                ]);
+
+                if total.value < 0.0 {
+                    row.set_cell(cell!(Fr->account.format_value(total.value)), 2)
+                        .expect("Unable to set value on total");
                 }
             }
 

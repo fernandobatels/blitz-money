@@ -24,22 +24,17 @@ impl Accounts {
 
         for account in accounts {
 
-            if account.open_balance >= 0.0 {
-                table.add_row(row![
-                    account.name,
-                    account.bank,
-                    Fg->account.open_balance_formmated(),
-                    account.open_balance_date.unwrap(),
-                    account.uuid
-                ]);
-            } else {
-                table.add_row(row![
-                    account.name,
-                    account.bank,
-                    Fr->account.open_balance_formmated(),
-                    account.open_balance_date.unwrap(),
-                    account.uuid
-                ]);
+            let mut row = table.add_row(row![
+                account.name,
+                account.bank,
+                Fg->account.open_balance_formmated(),
+                account.open_balance_date.unwrap(),
+                account.uuid
+            ]);
+
+            if account.open_balance < 0.0 {
+                row.set_cell(cell!(Fr->account.open_balance_formmated()), 2)
+                    .expect("Unable to set opening balance of account");
             }
         }
 
