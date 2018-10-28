@@ -66,7 +66,8 @@ impl Model for Movimentation {
             panic!("Deadline not found into a row(id {}) movimentation", uuid);
         }
 
-        if row["contact"].is_null() {
+        if row["contact"].is_null() && row["transaction"].is_null() {
+            // We dont need contact if is a transaction
             panic!("Contact not found into a row(id {}) movimentation", uuid);
         }
 
@@ -86,7 +87,12 @@ impl Model for Movimentation {
         };
 
         mov.account = Some(Account::get_account(storage, row["account"].to_string()).unwrap());
-        mov.contact = Some(Contact::get_contact(storage, row["contact"].to_string()).unwrap());
+
+        if !row["contact"].is_empty() {
+            mov.contact = Some(Contact::get_contact(storage, row["contact"].to_string()).unwrap());
+        } else {
+            mov.contact = None;
+        }
 
         mov.created_at = Some(row["created_at"].to_string().parse::<DateTime<Local>>().unwrap());
         mov.deadline = Some(NaiveDate::parse_from_str(&row["deadline"].to_string(), "%Y-%m-%d").unwrap());

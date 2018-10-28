@@ -47,7 +47,7 @@ impl Movimentations {
                     Fg->movimentation.value_formmated(),
                     movimentation.deadline.unwrap(),
                     movimentation.paid_in_formmated(),
-                    movimentation.contact.clone().unwrap().name,
+                    "",
                     movimentation.uuid
                 ]);
 
@@ -61,6 +61,13 @@ impl Movimentations {
                 if movimentation.transaction.is_some() {
                     row.set_cell(cell!("T"), 1)
                         .expect("Unable to set T on movimentation");
+
+                    // In trascations we show the destination account on place of contact
+                    row.set_cell(cell!(movimentation.transaction.unwrap().account.clone().unwrap().name + &"(account)".to_owned()), 5)
+                        .expect("Unable to set account of other transaction on movimentation");
+                } else {
+                    row.set_cell(cell!(movimentation.contact.clone().unwrap().name), 5)
+                        .expect("Unable to set contact on movimentation");
                 }
             }
 
