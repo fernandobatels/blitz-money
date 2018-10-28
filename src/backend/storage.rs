@@ -160,13 +160,29 @@ impl<'a> Data<'a> {
         self.storage.reopen_file();
         // To force postion after section start
         self.need_find_section = true;
+        self.last_position = 0;
         self.find_section();
 
+        let mut first = true;
+
         for (i, line) in self.storage.lines.iter().enumerate() {
+
+            // We start the find only after the start of section
+            if line.trim().is_empty() || self.last_position > i {
+                continue;
+            }
+
+            if !first && line.trim().chars().take(11).collect::<String>() == "::section::" {
+                // And stop on next section
+                return false;
+            }
+
             if line.trim().chars().take(36).collect::<String>() == uuid {
                 self.last_position = i.clone() - 1;
                 return true;
             }
+
+            first = false;
         }
 
         false
@@ -202,10 +218,10 @@ impl<'a> Data<'a> {
         Err("Next row not found")
     }
 
-    // Insert, or update, the row into storage
-    pub fn save<M: Model>(&mut self, row: M) {
+    // Insert, or update, the row into storage and return the uuid
+    pub fn save<M: Model>(&mut self, row: M) -> String {
 
-        let (uuid, is_new, data) = row.to_save();
+        let (mut uuid, is_new, data) = row.to_save();
 
         self.storage.reopen_file();
 
@@ -216,7 +232,8 @@ impl<'a> Data<'a> {
             self.need_find_section = true;
             self.find_section();
 
-            self.storage.lines.insert(self.last_position + 1, format!("{} {}", Uuid::new_v4(), data.dump()));
+            uuid = Uuid::new_v4().to_string();
+            self.storage.lines.insert(self.last_position + 1, format!("{} {}", uuid, data.dump()));
 
             self.need_find_section = true;
         } else {
@@ -230,6 +247,8 @@ impl<'a> Data<'a> {
         }
 
         self.storage.persist();
+
+        uuid
     }
 
     // Remove row of storage by id

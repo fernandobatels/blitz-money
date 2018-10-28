@@ -111,7 +111,7 @@ impl Model for Movimentation {
 
             if data.find_by_id(row["transaction"].to_string()) {
 
-                // This instruct the new() method of the othor
+                // This instruct the new() method of the other
                 // movimentation for dont't run more recursive operations
                 data.can_recursive = false;
 
@@ -138,7 +138,6 @@ impl Model for Movimentation {
 
         let mut ob = object!{
             "account" => self.account.unwrap().uuid,
-            "contact" => self.contact.unwrap().uuid,
             "description" => self.description,
             "value" => self.value,
             "deadline" => self.deadline.unwrap().format("%Y-%m-%d").to_string(),
@@ -151,6 +150,16 @@ impl Model for Movimentation {
 
         if !self.uuid.is_empty() {
             ob["updated_at"] = Local::now().to_rfc3339().to_string().into();
+        }
+
+        if self.contact.is_some() {
+            ob["contact"] = self.contact.unwrap().uuid.into();
+        } else if self.transaction.is_none() {
+            panic!("Contact or transaction must be present!");
+        }
+
+        if self.transaction.is_some() {
+            ob["transaction"] = self.transaction.unwrap().uuid.into();
         }
 
         (self.uuid.clone(), self.uuid.is_empty(), ob)
@@ -247,11 +256,75 @@ impl Movimentation {
     // Save updates, or create new, movimentation on storage
     pub fn store_movimentation(storage: &mut Storage, movimentation: Movimentation) {
 
+        if movimentation.transaction.is_some() {
+            panic!("You must be use the Movimentation#store_transaction for transactions!");
+        }
+
         storage.start_section("movimentations".to_string());
 
         let mut data = storage.get_section_data("movimentations".to_string());
 
         data.save(movimentation);
+    }
+
+    // Save updates, or create new, transactions movimentations
+    pub fn store_transaction(storage: &mut Storage, movimentation: &mut Movimentation, other: &mut Movimentation) {
+
+        storage.start_section("movimentations".to_string());
+
+        let mut data = storage.get_section_data("movimentations".to_string());
+
+        // The absolute value must be the same, duh
+        if movimentation.value.abs() != other.value.abs() {
+            other.value = movimentation.value;
+        }
+
+        // And the deadline
+        if movimentation.deadline != other.deadline {
+            other.deadline = movimentation.deadline;
+        }
+
+        // And the paid in
+        if movimentation.paid_in != other.paid_in {
+            other.paid_in = movimentation.paid_in;
+        }
+
+        // If value is the same we must invert the
+        // value of second movimentation
+        if movimentation.value == other.value {
+            if movimentation.value >= 0.0 {
+                other.value = 0.0 - movimentation.value;
+            } else {
+                other.value = movimentation.value.abs();
+            }
+        }
+
+        // If is a insert
+        if movimentation.uuid.is_empty() || other.uuid.is_empty() {
+
+            // We save the first movimentation to get his uuid
+            // and put on the second
+            movimentation.uuid = data.save(movimentation.to_owned());
+            other.transaction = Some(Box::new(movimentation.clone()));
+
+            // Now, we save de second movimentation to get his
+            // uuid and put on the first. On this point the second
+            // has the first uuid
+            other.uuid = data.save(other.to_owned());
+            movimentation.transaction = Some(Box::new(other.clone()));
+
+            // And finaly, we store the first for save the
+            // uuid of second
+            data.save(movimentation.to_owned());
+        } else {
+            // Update
+
+            other.transaction = Some(Box::new(movimentation.clone()));
+            movimentation.transaction = Some(Box::new(other.clone()));
+
+            data.save(movimentation.to_owned());
+            data.save(other.to_owned());
+        }
     }
 
     // Remvoe movimentation of storage
@@ -260,6 +333,15 @@ impl Movimentation {
         storage.start_section("movimentations".to_string());
 
         let mut data = storage.get_section_data("movimentations".to_string());
+
+        if data.find_by_id(uuid.clone()) {
+            let mov = data.next::<Movimentation>()
+                .expect("Clound't parse the movimentation");
+
+            if mov.transaction.is_some() {
+                data.remove_by_id(mov.transaction.unwrap().uuid);
+            }
+        }
 
         data.remove_by_id(uuid);
     }

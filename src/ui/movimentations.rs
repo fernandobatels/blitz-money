@@ -102,67 +102,96 @@ impl Movimentations {
     // Create new movimentation
     pub fn add(mut storage: Storage, params: Vec<String>) {
 
-        if params.len() == 6 {
-            // Shell mode
+        if params.len() == 6 || (params.len() > 0 && params[0] == "-i") {
 
-            let description = Input::param("Movimentation description".to_string(), true, params.clone(), 0);
+            let description: String;
+            let account: Option<Account>;
+            let value: f32;
+            let contact_uuid;
+            let deadline: Option<NaiveDate>;
+            let paid_in: Option<NaiveDate>;
 
-            let account_uuid = Input::param("Account".to_string(), true, params.clone(), 2);
-            let account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
-            let value = Input::param_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, params.clone(), 1);
+            if params.len() == 6 {
+                // Shell mode
 
-            let contact_uuid = Input::param("Contact".to_string(), true, params.clone(), 3);
-            let contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
+                description = Input::param("Movimentation description".to_string(), true, params.clone(), 0);
 
-            let deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 4);
-            let paid_in = Input::param_date("Paid in".to_string(), false, params.clone(), 5);
+                let account_uuid = Input::param("Account".to_string(), true, params.clone(), 2);
+                account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
-            Movimentation::store_movimentation(&mut storage, Movimentation {
+                value = Input::param_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, params.clone(), 1);
+
+                contact_uuid = Input::param("Contact".to_string(), true, params.clone(), 3);
+
+                deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 4);
+                paid_in = Input::param_date("Paid in".to_string(), false, params.clone(), 5);
+            } else {
+                // Interactive mode
+
+                description = Input::read("Movimentation description".to_string(), true, None);
+
+                let mut accounts: Vec<(String, String)> = vec![];
+                for ac in Account::get_accounts(&mut storage) {
+                    accounts.push((ac.uuid, ac.name));
+                }
+
+                let account_uuid = Input::read_option("Account".to_string(), true, None, accounts.clone());
+                account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
+
+                value = Input::read_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, None, account.clone().unwrap().currency);
+
+                let mut contacts: Vec<(String, String)> = vec![];
+                for co in Contact::get_contacts(&mut storage) {
+                    contacts.push((co.uuid, co.name));
+                }
+                // For transactions
+                for (uuid, name) in accounts {
+                    contacts.push((uuid, name + &"(account)".to_owned()));
+                }
+
+                contact_uuid = Input::read_option("Contact or other account(for transaction)".to_string(), true, None, contacts);
+
+                deadline = Input::read_date("Deadline".to_string(), true, None);
+                paid_in = Input::read_date("Paid in".to_string(), false, None);
+            }
+
+            let contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
+                Ok(con) => Some(con),
+                Err(_)  => None
+            };
+
+            let mut mov = Movimentation {
                 description: description,
                 value: value,
                 account: account,
-                contact: contact,
+                contact: contact.clone(),
                 deadline: deadline,
                 paid_in: paid_in,
                 ..Default::default()
-            });
-        } else if params.len() > 0 && params[0] == "-i" {
-            // Interactive mode
+            };
 
-            let description = Input::read("Movimentation description".to_string(), true, None);
+            //Transaction
+            if contact.is_none() {
 
-            let mut accounts: Vec<(String, String)> = vec![];
-            for ac in Account::get_accounts(&mut storage) {
-                accounts.push((ac.uuid, ac.name));
+                let mut transaction = mov.clone();
+
+                // Destination account
+                transaction.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
+
+                // Update the current movimentation with link to
+                // movimentation of other account
+                mov.transaction = Some(Box::new(transaction.clone()));
+
+                // And link the movimentation of the other account
+                // with this
+                transaction.transaction = Some(Box::new(mov.clone()));
+
+                Movimentation::store_transaction(&mut storage, &mut mov, &mut transaction);
+            } else {
+                Movimentation::store_movimentation(&mut storage, mov);
             }
 
-            let account_uuid = Input::read_option("Account".to_string(), true, None, accounts);
-            let account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
-
-            let value = Input::read_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, None, account.clone().unwrap().currency);
-
-
-            let mut contacts: Vec<(String, String)> = vec![];
-            for ac in Contact::get_contacts(&mut storage) {
-                contacts.push((ac.uuid, ac.name));
-            }
-
-            let contact_uuid = Input::read_option("Contact".to_string(), true, None, contacts);
-            let contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
-
-            let deadline = Input::read_date("Deadline".to_string(), true, None);
-            let paid_in = Input::read_date("Paid in".to_string(), false, None);
-
-            Movimentation::store_movimentation(&mut storage, Movimentation {
-                description: description,
-                value: value,
-                account: account,
-                contact: contact,
-                deadline: deadline,
-                paid_in: paid_in,
-                ..Default::default()
-            });
         } else {
             // Help mode
             println!("How to use: bmoney movimentations add [description] [value] [account id] [contact id] [deadline] [paid in]");
@@ -199,7 +228,11 @@ impl Movimentations {
                     .expect("Couldn't parse the string to money. The format is 00000.00");
             }
 
-            Movimentation::store_movimentation(&mut storage, movimentation);
+            if movimentation.transaction.is_some() {
+                Movimentation::store_transaction(&mut storage, &mut movimentation.clone(), &mut movimentation.transaction.unwrap());
+            } else {
+                Movimentation::store_movimentation(&mut storage, movimentation);
+            }
 
         } else if params.len() == 3 {
             // Shell mode
@@ -216,7 +249,11 @@ impl Movimentations {
                 movimentation.account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
             } else if params[1] == "contact" {
                 let contact_uuid = Input::param("Contact".to_string(), true, params.clone(), 2);
-                movimentation.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
+                if movimentation.transaction.is_some() {
+                    movimentation.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
+                } else {
+                    movimentation.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
+                }
             } else if params[1] == "deadline" {
                 movimentation.deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 2);
             } else if params[1] == "paid_in" {
@@ -225,7 +262,11 @@ impl Movimentations {
                 panic!("Field not found!");
             }
 
-            Movimentation::store_movimentation(&mut storage, movimentation);
+            if movimentation.transaction.is_some() {
+                Movimentation::store_transaction(&mut storage, &mut movimentation.clone(), &mut movimentation.transaction.unwrap());
+            } else {
+                Movimentation::store_movimentation(&mut storage, movimentation);
+            }
 
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
@@ -242,23 +283,38 @@ impl Movimentations {
                 accounts.push((ac.uuid, ac.name));
             }
 
-            let account_uuid = Input::read_option("Account".to_string(), true, Some(movimentation.account.clone().unwrap().uuid), accounts);
+            let account_uuid = Input::read_option("Account".to_string(), true, Some(movimentation.account.clone().unwrap().uuid), accounts.clone());
             movimentation.account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
             movimentation.value = Input::read_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, Some(movimentation.value), movimentation.account.clone().unwrap().currency);
 
-            let mut contacts: Vec<(String, String)> = vec![];
-            for ac in Contact::get_contacts(&mut storage) {
-                contacts.push((ac.uuid, ac.name));
-            }
+            let contact_uuid: String;
 
-            let contact_uuid = Input::read_option("Contact".to_string(), true, Some(movimentation.contact.clone().unwrap().uuid), contacts);
-            movimentation.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
+            if movimentation.transaction.is_some() {
+                contact_uuid = Input::read_option("Destination account".to_string(), true, Some(movimentation.transaction.clone().unwrap().uuid), accounts);
+            } else {
+                let mut contacts: Vec<(String, String)> = vec![];
+                for co in Contact::get_contacts(&mut storage) {
+                    contacts.push((co.uuid, co.name));
+                }
+
+                contact_uuid = Input::read_option("Contact".to_string(), true, Some(movimentation.contact.clone().unwrap().uuid), contacts);
+                movimentation.contact = Some(Contact::get_contact(&mut storage, contact_uuid.clone()).unwrap());
+            }
 
             movimentation.deadline = Input::read_date("Deadline".to_string(), true, movimentation.deadline);
             movimentation.paid_in = Input::read_date("Paid in".to_string(), false, movimentation.paid_in);
 
-            Movimentation::store_movimentation(&mut storage, movimentation);
+            if movimentation.transaction.is_some() {
+                let mut transaction = movimentation.clone().transaction.unwrap();
+
+                // Destination account
+                transaction.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
+
+                Movimentation::store_transaction(&mut storage, &mut movimentation, &mut transaction);
+            } else {
+                Movimentation::store_movimentation(&mut storage, movimentation);
+            }
         } else {
             // Help mode
             println!("How to use: bmoney movimentations update [id] [description|value|account|contact|deadline|paid] [value]");
