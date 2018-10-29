@@ -21,6 +21,7 @@ use std::env;
 use ui::accounts::Accounts;
 use ui::contacts::Contacts;
 use ui::movimentations::Movimentations;
+use ui::ui::Input;
 use backend::storage::Storage;
 
 fn main() {
@@ -37,15 +38,7 @@ fn main() {
         args.push("[action]".to_string());
     }
 
-    let mut is_csv = false;
-
-    for (i, param) in args.clone().iter().enumerate() {
-        if param == "--use-csv" {
-            is_csv = true;
-            args.remove(i);
-            break;
-        }
-    }
+    let is_csv = Input::extract_param(&mut args, "--use-csv".to_string());
 
     if args[1] == "accounts" {
         if args[2] == "list" {

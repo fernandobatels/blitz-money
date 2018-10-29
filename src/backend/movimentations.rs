@@ -50,6 +50,13 @@ pub struct Total {
     pub value: f32,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum StatusFilter {
+    FORPAY,
+    PAID,
+    ALL
+}
+
 impl Model for Movimentation {
 
     fn new(row: JsonValue, uuid: String, storage: &mut Storage, can_recursive: bool) -> Movimentation {
@@ -183,7 +190,7 @@ impl Movimentation {
 
     // Return a list with all movimentations
     // and total
-    pub fn get_movimentations(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate) -> (Vec<Movimentation>, Vec<Total>) {
+    pub fn get_movimentations(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, status: StatusFilter) -> (Vec<Movimentation>, Vec<Total>) {
 
         storage.start_section("movimentations".to_string());
 
@@ -221,6 +228,10 @@ impl Movimentation {
                     } else {
                         totals[2].value += line.value;
                     }
+
+                    if StatusFilter::PAID == status || StatusFilter::ALL == status {
+                        list.push(line);
+                    }
                 } else {
 
                     if line.value >= 0.0 {
@@ -228,9 +239,12 @@ impl Movimentation {
                     } else {
                         totals[0].value += line.value;
                     }
+
+                    if StatusFilter::FORPAY == status || StatusFilter::ALL == status {
+                        list.push(line);
+                    }
                 }
 
-                list.push(line);
             }
         }
 

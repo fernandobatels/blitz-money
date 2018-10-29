@@ -199,4 +199,18 @@ impl Input {
 
         money
     }
+
+    // Return if the param exists on params vec
+    // and remove it
+    pub fn extract_param(params: &mut Vec<String>, param: String) -> bool {
+
+        for (i, p) in params.clone().iter().enumerate() {
+            if p == &param {
+                params.remove(i);
+                return true;
+            }
+        }
+
+        false
+    }
 }

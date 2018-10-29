@@ -9,6 +9,7 @@
 use chrono::{Local, prelude::Datelike, NaiveDate};
 
 use backend::movimentations::Movimentation;
+use backend::movimentations::StatusFilter;
 use backend::accounts::Account;
 use backend::contacts::Contact;
 use backend::storage::Storage;
@@ -19,21 +20,31 @@ pub struct Movimentations {}
 impl Movimentations {
 
     // List of user movimentations
-    pub fn list(mut storage: Storage, params: Vec<String>, is_csv: bool) {
+    pub fn list(mut storage: Storage, mut params: Vec<String>, is_csv: bool) {
 
-        if params.len() == 1 || params.len() == 3 {
+        if params.len() == 1 || params.len() >= 3 {
 
             let account = Account::get_account(&mut storage, params[0].trim().to_string()).unwrap();
 
             let mut from = Local::now().with_day(1).unwrap().date().naive_local();
             let mut to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
 
+            let mut status = StatusFilter::ALL;
+
+            if Input::extract_param(&mut params, "--only-forpay".to_string()) {
+                status = StatusFilter::FORPAY;
+            }
+
+            if Input::extract_param(&mut params, "--only-paid".to_string()) {
+                status = StatusFilter::PAID;
+            }
+
             if params.len() == 3 {
                 from = NaiveDate::parse_from_str(&params[1].trim().to_string(), "%Y-%m-%d").unwrap();
                 to = NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap();
             }
 
-            let (movimentations, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to);
+            let (movimentations, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to, status);
 
             let mut table = Output::new_table();
 
