@@ -9,6 +9,7 @@
 use backend::storage::*;
 use backend::accounts::*;
 use backend::contacts::*;
+use backend::tags::*;
 use chrono::{Local, DateTime, NaiveDate};
 use json::JsonValue;
 
@@ -23,7 +24,8 @@ pub struct Movimentation {
    pub paid_in: Option<NaiveDate>,
    pub created_at: Option<DateTime<Local>>,
    pub updated_at: Option<DateTime<Local>>, // Last update
-   pub transaction: Option<Box<Movimentation>>
+   pub transaction: Option<Box<Movimentation>>,
+   pub tags: Vec<Tag>
 }
 
 impl Default for Movimentation {
@@ -40,7 +42,8 @@ impl Default for Movimentation {
             paid_in: None,
             created_at: Some(Local::now()),
             updated_at: None,
-            transaction: None
+            transaction: None,
+            tags: vec!()
         }
     }
 }
@@ -137,6 +140,13 @@ impl Model for Movimentation {
             }
         }
 
+        if !row["tags"].is_empty() {
+            for stag in row["tags"].members() {
+                if let Ok(tag) = Tag::get_tag(storage, stag.to_string()) {
+                    mov.tags.push(tag);
+                }
+            }
+        }
 
         mov
     }

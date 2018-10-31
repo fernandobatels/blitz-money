@@ -48,9 +48,14 @@ impl Movimentations {
 
             let mut table = Output::new_table();
 
-            table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"#id"]);
+            table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id"]);
 
             for movimentation in movimentations {
+
+                let tags: Vec<String> = movimentation.tags
+                    .iter()
+                    .map(|tag| tag.name.clone())
+                    .collect();
 
                 let mut row = table.add_row(row![
                     movimentation.description,
@@ -59,6 +64,7 @@ impl Movimentations {
                     movimentation.deadline.unwrap(),
                     movimentation.paid_in_formmated(),
                     "",
+                    tags.join(", "),
                     movimentation.uuid
                 ]);
 
@@ -83,7 +89,7 @@ impl Movimentations {
             }
 
 
-            table.add_row(row!["", "", "", "", "", "", ""]);
+            table.add_row(row!["", "", "", "", "", "", "", ""]);
 
             for total in totals {
 
@@ -91,6 +97,7 @@ impl Movimentations {
                     b->total.label,
                     "",
                     Fg->account.format_value(total.value),
+                    "",
                     "",
                     "",
                     "",
