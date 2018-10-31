@@ -18,6 +18,7 @@ mod ui;
 mod backend;
 
 use std::env;
+use ui::tags::Tags;
 use ui::accounts::Accounts;
 use ui::contacts::Contacts;
 use ui::movimentations::Movimentations;
@@ -75,6 +76,18 @@ fn main() {
             Movimentations::rm(storage, args[3..].to_vec());
         } else {
             println!("How to use: bmoney movimentations [list|add|update|rm]");
+        }
+    } else if args[1] == "tags" {
+        if args[2] == "list" {
+            Tags::list(storage, args[3..].to_vec(), is_csv);
+        } else if args[2] == "add" {
+            Tags::add(storage, args[3..].to_vec());
+        } else if args[2] == "update" {
+            Tags::update(storage, args[3..].to_vec());
+        } else if args[2] == "rm" {
+            Tags::rm(storage, args[3..].to_vec());
+        } else {
+            println!("How to use: bmoney tags [list|add|update|rm]");
         }
     } else {
      println!("How to use: bmoney [module] [action]");
