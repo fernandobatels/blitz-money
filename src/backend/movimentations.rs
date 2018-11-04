@@ -50,6 +50,7 @@ impl Default for Movimentation {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Total {
     pub label: String,
     pub value: f32,

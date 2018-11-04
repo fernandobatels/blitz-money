@@ -44,6 +44,8 @@ fn main() {
     if args[1] == "accounts" {
         if args[2] == "list" {
             Accounts::list(storage, args[3..].to_vec(), is_csv);
+        } else if args[2] == "status" {
+            Accounts::status(storage, args[3..].to_vec(), is_csv);
         } else if args[2] == "add" {
             Accounts::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {

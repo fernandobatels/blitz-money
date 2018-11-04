@@ -9,6 +9,10 @@
 use backend::accounts::Account;
 use backend::storage::Storage;
 use ui::ui::*;
+use chrono::{Local, prelude::Datelike, NaiveDate};
+use prettytable::{Row, Cell, Attr, color};
+use backend::movimentations::Movimentation;
+use backend::movimentations::StatusFilter;
 
 pub struct Accounts {}
 
@@ -36,6 +40,71 @@ impl Accounts {
                 row.set_cell(cell!(Fr->account.open_balance_formmated()), 2)
                     .expect("Unable to set opening balance of account");
             }
+        }
+
+        Output::print_table(table, is_csv);
+    }
+
+    // Show status of all accounts
+    pub fn status(mut storage: Storage, params: Vec<String>, is_csv: bool) {
+
+        let mut from = Local::now().with_day(1).unwrap().date().naive_local();
+        let mut to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
+
+        if params.len() == 2 {
+            from = NaiveDate::parse_from_str(&params[0].trim().to_string(), "%Y-%m-%d").unwrap();
+            to = NaiveDate::parse_from_str(&params[1].trim().to_string(), "%Y-%m-%d").unwrap();
+        }
+
+        let accounts = Account::get_accounts(&mut storage);
+        let mut table = Output::new_table();
+
+        let mut first = true;
+
+        for account in accounts {
+
+            let (_, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to, StatusFilter::ALL, None, None);
+
+            let mut cols: Vec<Cell>;
+
+            if first {
+                // On first account we set the header
+                // adding the news columns
+
+                cols = vec![
+                    Cell::new("Account")
+                        .with_style(Attr::Bold)
+                ];
+
+                for total in totals.clone() {
+                    cols.push(
+                        Cell::new(&total.label)
+                            .with_style(Attr::Bold)
+                    );
+                }
+
+                table.set_titles(Row::new(cols));
+
+                first = false;
+            }
+
+            cols = vec![
+                Cell::new(&account.name)
+            ];
+
+            for total in totals {
+                let mut cell = Cell::new(&account.format_value(total.value));
+
+                if total.value >= 0.0 {
+                    cell = cell.with_style(Attr::ForegroundColor(color::GREEN));
+                } else {
+                    cell = cell.with_style(Attr::ForegroundColor(color::RED));
+                }
+
+                cols.push(cell);
+            }
+
+            table.add_row(Row::new(cols));
         }
 
         Output::print_table(table, is_csv);
