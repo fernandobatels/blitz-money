@@ -27,8 +27,8 @@ impl Movimentations {
 
             let account = Account::get_account(&mut storage, params[0].trim().to_string()).unwrap();
 
-            let mut from = Local::now().with_day(1).unwrap().date().naive_local();
-            let mut to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
+            let show_all = Input::extract_param(&mut params, "--show-all".to_string());
+
 
             let mut status = StatusFilter::ALL;
 
@@ -40,16 +40,25 @@ impl Movimentations {
                 status = StatusFilter::PAID;
             }
 
+
+            let mut from = Local::now().with_day(1).unwrap().date().naive_local();
+            let mut to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
+
             if params.len() == 3 {
                 from = NaiveDate::parse_from_str(&params[1].trim().to_string(), "%Y-%m-%d").unwrap();
                 to = NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap();
             }
 
+
             let (movimentations, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to, status);
 
             let mut table = Output::new_table();
 
-            table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id"]);
+            if show_all {
+                table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id", b->"Observations", b->"Created at", b->"Last update"]);
+            } else {
+                table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id"]);
+            }
 
             for movimentation in movimentations {
 
@@ -87,10 +96,24 @@ impl Movimentations {
                     row.set_cell(cell!(movimentation.contact.clone().unwrap().name), 5)
                         .expect("Unable to set contact on movimentation");
                 }
+
+                if show_all {
+                    row.add_cell(cell!(movimentation.observations));
+                    row.add_cell(cell!(movimentation.created_at.unwrap()));
+                    if movimentation.updated_at.is_some() {
+                        row.add_cell(cell!(movimentation.updated_at.unwrap()));
+                    } else {
+                        row.add_cell(cell!(""));
+                    }
+                }
             }
 
 
-            table.add_row(row!["", "", "", "", "", "", "", ""]);
+            if show_all {
+                table.add_row(row!["", "", "", "", "", "", "", "", "", "", ""]);
+            } else {
+                table.add_row(row!["", "", "", "", "", "", "", ""]);
+            }
 
             for total in totals {
 
@@ -108,6 +131,12 @@ impl Movimentations {
                 if total.value < 0.0 {
                     row.set_cell(cell!(Fr->account.format_value(total.value)), 2)
                         .expect("Unable to set value on total");
+                }
+
+                if show_all {
+                    row.add_cell(cell!(""));
+                    row.add_cell(cell!(""));
+                    row.add_cell(cell!(""));
                 }
             }
 
@@ -130,6 +159,7 @@ impl Movimentations {
             let deadline: Option<NaiveDate>;
             let paid_in: Option<NaiveDate>;
             let mut tags: Vec<Tag> = vec!();
+            let observations: String;
 
             if params.len() >= 5 {
                 // Shell mode
@@ -156,6 +186,8 @@ impl Movimentations {
                         );
                     }
                 }
+
+                observations = Input::param("Observations".to_string(), false, params.clone(), 7);
             } else {
                 // Interactive mode
 
@@ -197,6 +229,8 @@ impl Movimentations {
                                     .expect("Tag not found")
                     )
                     .collect();
+
+                observations = Input::read("Observations".to_string(), false, None);
             }
 
             let contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
@@ -212,6 +246,7 @@ impl Movimentations {
                 deadline: deadline,
                 paid_in: paid_in,
                 tags: tags,
+                observations: observations,
                 ..Default::default()
             };
 
@@ -238,7 +273,7 @@ impl Movimentations {
 
         } else {
             // Help mode
-            println!("How to use: bmoney movimentations add [description] [value] [account id] [contact id] [deadline] [paid in]");
+            println!("How to use: bmoney movimentations add [description] [value] [account id] [contact id] [deadline] [paid in] [tags] [observations]");
             println!("Or with interactive mode: bmoney movimentations add -i")
         }
     }
@@ -314,6 +349,8 @@ impl Movimentations {
                         );
                     }
                 }
+            } else if params[1] == "observations" {
+                movimentation.observations = Input::param("Observations".to_string(), false, params.clone(), 2);
             } else {
                 panic!("Field not found!");
             }
@@ -379,6 +416,8 @@ impl Movimentations {
                 )
                 .collect();
 
+            movimentation.observations = Input::read("Observations".to_string(), false, Some(movimentation.observations));
+
             if movimentation.transaction.is_some() {
                 let mut transaction = movimentation.clone().transaction.unwrap();
 
@@ -391,7 +430,7 @@ impl Movimentations {
             }
         } else {
             // Help mode
-            println!("How to use: bmoney movimentations update [id] [description|value|account|contact|deadline|paid] [value]");
+            println!("How to use: bmoney movimentations update [id] [description|value|account|contact|deadline|paid|tags|observations] [value]");
             println!("Or with interactive mode: bmoney movimentations update -i");
             println!("Or for pay mode: bmoney movimentations update [id] pay [\"\"|YYYY-MM-DD|unpaid|today](optional) [new_value](optional)");
         }

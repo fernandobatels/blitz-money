@@ -25,7 +25,8 @@ pub struct Movimentation {
    pub created_at: Option<DateTime<Local>>,
    pub updated_at: Option<DateTime<Local>>, // Last update
    pub transaction: Option<Box<Movimentation>>,
-   pub tags: Vec<Tag>
+   pub tags: Vec<Tag>,
+   pub observations: String,
 }
 
 impl Default for Movimentation {
@@ -43,7 +44,8 @@ impl Default for Movimentation {
             created_at: Some(Local::now()),
             updated_at: None,
             transaction: None,
-            tags: vec!()
+            tags: vec!(),
+            observations: "".to_string()
         }
     }
 }
@@ -148,6 +150,10 @@ impl Model for Movimentation {
             }
         }
 
+        if !row["observations"].is_empty() {
+            mov.observations = row["observations"].to_string();
+        }
+
         mov
     }
 
@@ -186,6 +192,10 @@ impl Model for Movimentation {
                 .collect();
 
             ob["tags"] = tags.into();
+        }
+
+        if !self.observations.is_empty() {
+            ob["observations"] = self.observations.into();
         }
 
         (self.uuid.clone(), self.uuid.is_empty(), ob)
