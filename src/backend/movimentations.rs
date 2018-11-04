@@ -179,6 +179,15 @@ impl Model for Movimentation {
             ob["transaction"] = self.transaction.unwrap().uuid.into();
         }
 
+        if self.tags.len() > 0 {
+            let tags: Vec<String> = self.tags
+                .iter()
+                .map(|tag| tag.uuid.clone())
+                .collect();
+
+            ob["tags"] = tags.into();
+        }
+
         (self.uuid.clone(), self.uuid.is_empty(), ob)
     }
 }

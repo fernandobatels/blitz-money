@@ -12,6 +12,7 @@ use backend::movimentations::Movimentation;
 use backend::movimentations::StatusFilter;
 use backend::accounts::Account;
 use backend::contacts::Contact;
+use backend::tags::Tag;
 use backend::storage::Storage;
 use ui::ui::*;
 
@@ -120,7 +121,7 @@ impl Movimentations {
     // Create new movimentation
     pub fn add(mut storage: Storage, params: Vec<String>) {
 
-        if params.len() == 6 || (params.len() > 0 && params[0] == "-i") {
+        if params.len() >= 5 || (params.len() == 1 && params[0] == "-i") {
 
             let description: String;
             let account: Option<Account>;
@@ -128,9 +129,9 @@ impl Movimentations {
             let contact_uuid;
             let deadline: Option<NaiveDate>;
             let paid_in: Option<NaiveDate>;
+            let mut tags: Vec<Tag> = vec!();
 
-
-            if params.len() == 6 {
+            if params.len() >= 5 {
                 // Shell mode
 
                 description = Input::param("Movimentation description".to_string(), true, params.clone(), 0);
@@ -144,6 +145,17 @@ impl Movimentations {
 
                 deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 4);
                 paid_in = Input::param_date("Paid in".to_string(), false, params.clone(), 5);
+
+                let tags_str = Input::param("Tags".to_string(), false, params.clone(), 6);
+
+                if !tags_str.is_empty() {
+                    for tag in tags_str.split(",") {
+                        tags.push(
+                            Tag::get_tag(&mut storage, tag.to_string())
+                                .expect("Tag not found")
+                        );
+                    }
+                }
             } else {
                 // Interactive mode
 
@@ -172,6 +184,19 @@ impl Movimentations {
 
                 deadline = Input::read_date("Deadline".to_string(), true, None);
                 paid_in = Input::read_date("Paid in".to_string(), false, None);
+
+                let mut tags_ops: Vec<(String, String)> = vec![];
+                for tag in Tag::get_tags(&mut storage) {
+                    tags_ops.push((tag.uuid, tag.name));
+                }
+
+                tags = Input::read_options("Tags".to_string(), false, vec![], tags_ops)
+                    .iter()
+                    .map(
+                        |tag| Tag::get_tag(&mut storage, tag.to_string())
+                                    .expect("Tag not found")
+                    )
+                    .collect();
             }
 
             let contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
@@ -186,6 +211,7 @@ impl Movimentations {
                 contact: contact.clone(),
                 deadline: deadline,
                 paid_in: paid_in,
+                tags: tags,
                 ..Default::default()
             };
 
@@ -276,6 +302,18 @@ impl Movimentations {
                 movimentation.deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 2);
             } else if params[1] == "paid_in" {
                 movimentation.paid_in = Input::param_date("Paid in".to_string(), false, params.clone(), 2);
+            } else if params[1] == "tags" {
+                let tags_str = Input::param("Tags".to_string(), false, params.clone(), 2);
+                movimentation.tags = vec![];
+
+                if !tags_str.is_empty() {
+                    for tag in tags_str.split(",") {
+                        movimentation.tags.push(
+                            Tag::get_tag(&mut storage, tag.to_string())
+                                .expect("Tag not found")
+                        );
+                    }
+                }
             } else {
                 panic!("Field not found!");
             }
@@ -322,6 +360,24 @@ impl Movimentations {
 
             movimentation.deadline = Input::read_date("Deadline".to_string(), true, movimentation.deadline);
             movimentation.paid_in = Input::read_date("Paid in".to_string(), false, movimentation.paid_in);
+
+            let mut tags_ops: Vec<(String, String)> = vec![];
+            for tag in Tag::get_tags(&mut storage) {
+                tags_ops.push((tag.uuid, tag.name));
+            }
+
+            let current_tags: Vec<String> = movimentation.tags.clone()
+                .iter()
+                .map(|tag| tag.uuid.clone())
+                .collect();
+
+            movimentation.tags = Input::read_options("Tags".to_string(), false, current_tags, tags_ops)
+                .iter()
+                .map(
+                    |tag| Tag::get_tag(&mut storage, tag.to_string())
+                                .expect("Tag not found")
+                )
+                .collect();
 
             if movimentation.transaction.is_some() {
                 let mut transaction = movimentation.clone().transaction.unwrap();

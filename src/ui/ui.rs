@@ -150,10 +150,51 @@ impl Input {
         value
     }
 
+    // Read options from stdin
+    pub fn read_options(mut label: String, is_required: bool, current_value: Vec<String>, options: Vec<(String, String)>) -> Vec<String> {
+
+        if options.len() == 0 {
+            panic!("No options avaliable for {}", label);
+        }
+
+        label.push_str(", options avaliable:");
+        for (i, (_, option)) in options.iter().enumerate() {
+            label.push_str(&format!("\n[{}] => {}", i, option));
+        }
+        label.push_str("\nSelect one or input the full uuid(use ',' to select more)");
+
+        let values = Input::read(label, is_required, None);
+
+        if values.is_empty() {
+            return current_value;
+        }
+
+        let mut result: Vec<String> = vec!();
+
+        for value in values.split(",") {
+
+            // We can't run panic because the user can input a uuid
+            let selected = match value.trim().parse::<usize>() {
+                Ok(val) => val,
+                Err(_e) => options.len() + 1
+            };
+
+            // If the user input a valid index
+            if selected < options.len() {
+                let (uuid, _) = options[selected].clone();
+                result.push(uuid);
+            } else {
+                result.push(value.trim().to_string());
+            }
+        }
+
+        result
+    }
+
     // Parse the param to a string
     pub fn param(label: String, is_required: bool, params: Vec<String>, position: usize) -> String {
 
-        if params.len() < position {
+        if params.len() <= position {
             if is_required {
                 panic!("The [{}] is required", label);
             } else {
