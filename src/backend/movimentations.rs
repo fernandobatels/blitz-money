@@ -219,7 +219,7 @@ impl Movimentation {
 
     // Return a list with all movimentations
     // and total
-    pub fn get_movimentations(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, filter_status: StatusFilter, filter_uuid: Option<String>) -> (Vec<Movimentation>, Vec<Total>) {
+    pub fn get_movimentations(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, filter_status: StatusFilter, filter_uuid: Option<String>, filter_tag: Option<String>) -> (Vec<Movimentation>, Vec<Total>) {
 
         storage.start_section("movimentations".to_string());
 
@@ -247,6 +247,8 @@ impl Movimentation {
                     continue;
                 }
 
+                let mut filter_status_ok: bool;
+
                 // Totals
                 if line.paid_in.is_some() {
 
@@ -258,15 +260,7 @@ impl Movimentation {
                         totals[2].value += line.value;
                     }
 
-                    if StatusFilter::PAID == filter_status || StatusFilter::ALL == filter_status {
-                        if let Some(fuuid) = filter_uuid.clone() {
-                            if fuuid == line.uuid {
-                                list.push(line);
-                            }
-                        } else {
-                            list.push(line);
-                        }
-                    }
+                    filter_status_ok = StatusFilter::PAID == filter_status || StatusFilter::ALL == filter_status;
                 } else {
 
                     if line.value >= 0.0 {
@@ -275,15 +269,21 @@ impl Movimentation {
                         totals[0].value += line.value;
                     }
 
-                    if StatusFilter::FORPAY == filter_status || StatusFilter::ALL == filter_status {
-                        if let Some(fuuid) = filter_uuid.clone() {
-                            if fuuid == line.uuid {
-                                list.push(line);
-                            }
-                        } else {
-                            list.push(line);
-                        }
-                    }
+                    filter_status_ok = StatusFilter::FORPAY == filter_status || StatusFilter::ALL == filter_status;
+                }
+
+                let mut filter_uuid_ok = true;
+                if let Some(fuuid) = filter_uuid.clone() {
+                    filter_status_ok = fuuid == line.uuid;
+                }
+
+                let mut filter_tag_ok = true;
+                if let Some(ftag) = filter_tag.clone() {
+                    filter_tag_ok = line.tags.iter().any(|tag| ftag == tag.uuid);
+                }
+
+                if filter_status_ok && filter_uuid_ok && filter_tag_ok {
+                    list.push(line);
                 }
 
             }

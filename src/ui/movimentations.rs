@@ -44,6 +44,8 @@ impl Movimentations {
             let uuid = Input::extract_named_param(&mut params, "--uuid=".to_string());
 
 
+            let tag = Input::extract_named_param(&mut params, "--tag=".to_string());
+
             let mut from = Local::now().with_day(1).unwrap().date().naive_local();
             let mut to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
 
@@ -52,7 +54,7 @@ impl Movimentations {
                 to = NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap();
             }
 
-            let (movimentations, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to, status, uuid);
+            let (movimentations, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to, status, uuid, tag);
 
             let mut table = Output::new_table();
 
