@@ -254,4 +254,19 @@ impl Input {
 
         false
     }
+
+    // Return value of named param and remove it
+    // from vec params. Eg.: --name=value
+    pub fn extract_named_param(params: &mut Vec<String>, param: String) -> Option<String> {
+
+        for (i, p) in params.clone().iter().enumerate() {
+            if p.starts_with(&param) {
+                params.remove(i);
+                let vals: Vec<&str> = p.split("=").collect();
+                return Some(vals[1].to_string());
+            }
+        }
+
+        None
+    }
 }

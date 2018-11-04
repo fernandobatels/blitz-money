@@ -219,7 +219,7 @@ impl Movimentation {
 
     // Return a list with all movimentations
     // and total
-    pub fn get_movimentations(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, status: StatusFilter) -> (Vec<Movimentation>, Vec<Total>) {
+    pub fn get_movimentations(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, filter_status: StatusFilter, filter_uuid: Option<String>) -> (Vec<Movimentation>, Vec<Total>) {
 
         storage.start_section("movimentations".to_string());
 
@@ -258,8 +258,14 @@ impl Movimentation {
                         totals[2].value += line.value;
                     }
 
-                    if StatusFilter::PAID == status || StatusFilter::ALL == status {
-                        list.push(line);
+                    if StatusFilter::PAID == filter_status || StatusFilter::ALL == filter_status {
+                        if let Some(fuuid) = filter_uuid.clone() {
+                            if fuuid == line.uuid {
+                                list.push(line);
+                            }
+                        } else {
+                            list.push(line);
+                        }
                     }
                 } else {
 
@@ -269,8 +275,14 @@ impl Movimentation {
                         totals[0].value += line.value;
                     }
 
-                    if StatusFilter::FORPAY == status || StatusFilter::ALL == status {
-                        list.push(line);
+                    if StatusFilter::FORPAY == filter_status || StatusFilter::ALL == filter_status {
+                        if let Some(fuuid) = filter_uuid.clone() {
+                            if fuuid == line.uuid {
+                                list.push(line);
+                            }
+                        } else {
+                            list.push(line);
+                        }
                     }
                 }
 
