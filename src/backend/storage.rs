@@ -271,16 +271,165 @@ impl<'a> Data<'a> {
 mod tests {
 
     use super::*;
+    use uuid::Uuid;
+
+    #[derive(Default, Clone, Debug)]
+    pub struct TestModel {
+       pub uuid: String,
+       pub name: String,
+    }
+
+    impl Model for TestModel {
+
+        fn new(row: JsonValue, uuid: String, _storage: &mut Storage, _can_recursive: bool) -> TestModel {
+
+            if row["name"].is_null() {
+                panic!("Name not found into a row(id {})", uuid);
+            }
+
+            TestModel {
+                uuid: uuid,
+                name: row["name"].to_string(),
+            }
+        }
+
+        fn to_save(self) -> (String, bool, JsonValue) {
+            (self.uuid.clone(), self.uuid.is_empty(), object!{
+                "name" => self.name,
+            })
+        }
+    }
 
     #[test]
     fn check_section() {
-        let mut st = Storage { path_str: "/tmp/tscs".to_string(), file: None, lines: Vec::new() };
+
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
         assert!(!st.check_section("accounts".to_string()));
     }
 
     #[test]
     fn start_section() {
-        let mut st = Storage { path_str: "/tmp/tssc".to_string(), file: None, lines: Vec::new() };
+
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
         assert!(st.start_section("accounts".to_string()));
+    }
+
+    #[test]
+    fn get_section_data() {
+
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+
+        assert!(st.start_section("accounts".to_string()));
+
+        let data = st.get_section_data("accounts".to_string());
+
+        assert_eq!(data.section, "accounts".to_string());
+        assert_eq!(data.last_position, 0);
+        assert_eq!(data.need_find_section, true);
+        assert_eq!(data.can_recursive, true);
+    }
+
+    #[test]
+    fn save() {
+
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+
+        assert!(st.start_section("accounts".to_string()));
+
+        let mut data = st.get_section_data("accounts".to_string());
+
+        let test = TestModel { uuid: "".to_string(), name: "TESTTT!".to_string() };
+
+        let new_uuid = data.save(test);
+
+        // Valid uuid
+        assert_eq!(new_uuid.len(), 36);
+
+        let test2 = TestModel { uuid: new_uuid.clone(), name: "TEST UPDATE!".to_string() };
+
+        let updated_uuid = data.save(test2);
+
+        // If is the same uuid
+        assert_eq!(new_uuid, updated_uuid);
+    }
+
+    #[test]
+    fn next() {
+
+        let path = "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string();
+
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+
+        assert!(st.start_section("accounts".to_string()));
+
+        let mut data = st.get_section_data("accounts".to_string());
+
+        data.save(TestModel { uuid: "".to_string(), name: "FIND ME!".to_string() });
+
+        assert!(data.next::<TestModel>().is_ok());
+
+        // Load again
+        let mut st2 = Storage { path_str: path, file: None, lines: Vec::new() };
+
+        let mut data2 = st2.get_section_data("accounts".to_string());
+
+        let row = data2.next::<TestModel>();
+
+        assert!(row.is_ok());
+
+        assert_eq!(row.clone().unwrap().uuid.len(), 36);
+        assert_eq!(row.unwrap().name, "FIND ME!".to_string());
+    }
+
+    #[test]
+    fn find_by_id() {
+
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+
+        assert!(st.start_section("accounts".to_string()));
+
+        let mut data = st.get_section_data("accounts".to_string());
+
+        data.save(TestModel { uuid: "".to_string(), name: "FIND ME!".to_string() });
+        let new_uuid = data.save(TestModel { uuid: "".to_string(), name: "FIND ME2!".to_string() });
+        data.save(TestModel { uuid: "".to_string(), name: "FIND ME3!".to_string() });
+
+        // Valid uuid
+        assert_eq!(new_uuid.len(), 36);
+
+        // If is finded
+        assert!(data.find_by_id(new_uuid.clone()));
+
+        let row = data.next::<TestModel>();
+
+        assert!(row.is_ok());
+
+        assert_eq!(row.clone().unwrap().uuid, new_uuid);
+        assert_eq!(row.unwrap().name, "FIND ME2!".to_string());
+    }
+
+    #[test]
+    fn remove_by_id() {
+
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+
+        assert!(st.start_section("accounts".to_string()));
+
+        let mut data = st.get_section_data("accounts".to_string());
+
+        data.save(TestModel { uuid: "".to_string(), name: "FIND ME!".to_string() });
+        let new_uuid = data.save(TestModel { uuid: "".to_string(), name: "FIND ME2!".to_string() });
+        data.save(TestModel { uuid: "".to_string(), name: "FIND ME3!".to_string() });
+
+        // Valid uuid
+        assert_eq!(new_uuid.len(), 36);
+
+        // If is finded
+        assert!(data.find_by_id(new_uuid.clone()));
+
+        data.remove_by_id(new_uuid.clone());
+
+        // uuid can't more finded
+        assert!(!data.find_by_id(new_uuid));
     }
 }
