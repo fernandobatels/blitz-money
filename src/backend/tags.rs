@@ -89,3 +89,94 @@ impl Tag {
         data.remove_by_id(uuid);
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use uuid::Uuid;
+
+    fn populate() -> String {
+
+        let path = "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string();
+
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+
+        assert!(st.start_section("tags".to_string()));
+
+        let mut data = st.get_section_data("tags".to_string());
+
+        data.save(Tag { uuid: "".to_string(), name: "tag 1".to_string() });
+        data.save(Tag { uuid: "".to_string(), name: "tag 2".to_string() });
+        data.save(Tag { uuid: "".to_string(), name: "tag 3".to_string() });
+        data.save(Tag { uuid: "".to_string(), name: "tag 4".to_string() });
+
+        path
+    }
+
+    #[test]
+    fn get_tags() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let tags = Tag::get_tags(&mut st);
+
+        assert_eq!(tags[0].name, "tag 4".to_string());
+        assert_eq!(tags[1].name, "tag 3".to_string());
+        assert_eq!(tags[2].name, "tag 2".to_string());
+        assert_eq!(tags[3].name, "tag 1".to_string());
+    }
+
+    #[test]
+    fn get_tag() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let tags = Tag::get_tags(&mut st);
+
+        let uuid = tags[0].uuid.clone();
+
+        let tag = Tag::get_tag(&mut st, uuid);
+
+        assert!(tag.is_ok());
+        assert_eq!(tag.unwrap().name, "tag 4".to_string());
+
+        let tage = Tag::get_tag(&mut st, "NOOOO".to_string());
+
+        assert!(tage.is_err());
+    }
+
+
+    #[test]
+    fn store_tag() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        Tag::store_tag(&mut st, Tag { uuid: "".to_string(), name: "tag 5".to_string() });
+
+        let tags = Tag::get_tags(&mut st);
+
+        assert_eq!(tags[0].name, "tag 5".to_string());
+        assert_eq!(tags[1].name, "tag 4".to_string());
+    }
+
+    #[test]
+    fn remove_tag() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let tags = Tag::get_tags(&mut st);
+
+        let uuid = tags[0].uuid.clone();
+
+        let tag = Tag::get_tag(&mut st, uuid.clone());
+
+        assert!(tag.is_ok());
+
+        Tag::remove_tag(&mut st, uuid.clone());
+
+        let tage = Tag::get_tag(&mut st, uuid.clone());
+
+        assert!(tage.is_err());
+    }
+}
