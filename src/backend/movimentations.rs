@@ -474,25 +474,220 @@ mod tests {
 
         assert_eq!(accounts[0].name, "account BB".to_string());
 
-        let (movimentations, total) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+        let (movimentations, _total) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
 
         assert_eq!(movimentations.len(), 2);
         assert_eq!(movimentations[0].description, "movimentation 2".to_string());
         assert_eq!(movimentations[1].description, "movimentation 1".to_string());
+    }
 
-        assert_eq!(total.len(), 6);
-        assert_eq!(total[0].label, "Expenses(payable)".to_string());
-        assert_eq!(total[0].value, -125.53);
-        assert_eq!(total[1].label, "Incomes(to receive)".to_string());
-        assert_eq!(total[1].value, 10.0);
-        assert_eq!(total[2].label, "Expenses".to_string());
-        assert_eq!(total[2].value, 0.0);
-        assert_eq!(total[3].label, "Incomes".to_string());
-        assert_eq!(total[3].value, 0.0);
-        assert_eq!(total[4].label, "Previous balance".to_string());
-        assert_eq!(total[4].value, 35.0);
-        assert_eq!(total[5].label, "Current balance".to_string());
-        assert_eq!(total[5].value, 35.0);
+    #[test]
+    fn get_movimentations_totals() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let accounts = Account::get_accounts(&mut st);
+
+        assert_eq!(accounts[0].name, "account BB".to_string());
+        assert_eq!(accounts[1].name, "account AA".to_string());
+
+        let (movimentations_a, totals_a) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations_a.len(), 2);
+
+        assert_eq!(totals_a.len(), 6);
+        assert_eq!(totals_a[0].label, "Expenses(payable)".to_string());
+        assert_eq!(totals_a[0].value, -125.53);
+        assert_eq!(totals_a[1].label, "Incomes(to receive)".to_string());
+        assert_eq!(totals_a[1].value, 10.0);
+        assert_eq!(totals_a[2].label, "Expenses".to_string());
+        assert_eq!(totals_a[2].value, 0.0);
+        assert_eq!(totals_a[3].label, "Incomes".to_string());
+        assert_eq!(totals_a[3].value, 0.0);
+        assert_eq!(totals_a[4].label, "Previous balance".to_string());
+        assert_eq!(totals_a[4].value, 35.0);
+        assert_eq!(totals_a[5].label, "Current balance".to_string());
+        assert_eq!(totals_a[5].value, 35.0);
+
+        let mut paid = movimentations_a[0].clone();
+        paid.paid_in = Some(NaiveDate::parse_from_str("2018-10-25", "%Y-%m-%d").unwrap());
+        Movimentation::store_movimentation(&mut st, paid);
+
+        let (movimentations_b, totals_b) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations_b.len(), 2);
+
+        assert_eq!(totals_b.len(), 6);
+        assert_eq!(totals_b[0].label, "Expenses(payable)".to_string());
+        assert_eq!(totals_b[0].value, 0.0);
+        assert_eq!(totals_b[1].label, "Incomes(to receive)".to_string());
+        assert_eq!(totals_b[1].value, 10.0);
+        assert_eq!(totals_b[2].label, "Expenses".to_string());
+        assert_eq!(totals_b[2].value, -125.53);
+        assert_eq!(totals_b[3].label, "Incomes".to_string());
+        assert_eq!(totals_b[3].value, 0.0);
+        assert_eq!(totals_b[4].label, "Previous balance".to_string());
+        assert_eq!(totals_b[4].value, 35.0);
+        assert_eq!(totals_b[5].label, "Current balance".to_string());
+        assert_eq!(totals_b[5].value, -90.53);
+
+        let (movimentations_c, totals_c) = Movimentation::get_movimentations(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations_c.len(), 1);
+
+        assert_eq!(totals_c.len(), 6);
+        assert_eq!(totals_c[0].label, "Expenses(payable)".to_string());
+        assert_eq!(totals_c[0].value, 0.0);
+        assert_eq!(totals_c[1].label, "Incomes(to receive)".to_string());
+        assert_eq!(totals_c[1].value, 25.580002);
+        assert_eq!(totals_c[2].label, "Expenses".to_string());
+        assert_eq!(totals_c[2].value, 0.0);
+        assert_eq!(totals_c[3].label, "Incomes".to_string());
+        assert_eq!(totals_c[3].value, 0.0);
+        assert_eq!(totals_c[4].label, "Previous balance".to_string());
+        assert_eq!(totals_c[4].value, 0.0);
+        assert_eq!(totals_c[5].label, "Current balance".to_string());
+        assert_eq!(totals_c[5].value, 0.0);
+    }
+
+    #[test]
+    fn transactions() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let accounts = Account::get_accounts(&mut st);
+
+        assert_eq!(accounts[0].name, "account BB".to_string());
+        assert_eq!(accounts[1].name, "account AA".to_string());
+
+        let contacts = Contact::get_contacts(&mut st);
+
+        assert_eq!(contacts[0].name, "contact 2".to_string());
+
+        let mut from = Movimentation {
+            description: "movimentation from".to_string(),
+            value: 20.00,
+            account: Some(accounts[0].clone()),
+            contact: Some(contacts[0].clone()),
+            deadline: Some(NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap()),
+            ..Default::default()
+        };
+
+        let mut to = from.clone();
+        to.account = Some(accounts[1].clone());
+        to.description = "movimentation to".to_string();
+
+        Movimentation::store_transaction(&mut st, &mut from, &mut to);
+
+        let (movimentations_a, totals_a) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations_a.len(), 3);
+
+        assert_eq!(totals_a.len(), 6);
+        assert_eq!(totals_a[1].label, "Incomes(to receive)".to_string());
+        assert_eq!(totals_a[1].value, 30.0);
+
+        let (movimentations_b, totals_b) = Movimentation::get_movimentations(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations_b.len(), 2);
+
+        assert_eq!(totals_b.len(), 6);
+        assert_eq!(totals_b[0].label, "Expenses(payable)".to_string());
+        assert_eq!(totals_b[0].value, -20.0);
+
+        // Paying the transaction
+        let mut paid = movimentations_a[0].clone();
+        assert_eq!(paid.description, "movimentation from".to_string());
+        paid.paid_in = Some(NaiveDate::parse_from_str("2018-10-19", "%Y-%m-%d").unwrap());
+        Movimentation::store_transaction(&mut st, &mut paid.clone(), &mut paid.transaction.unwrap());
+
+        let (movimentations_c, totals_c) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations_c.len(), 3);
+
+        assert_eq!(totals_c.len(), 6);
+        assert_eq!(totals_c[1].label, "Incomes(to receive)".to_string());
+        assert_eq!(totals_c[1].value, 10.0);
+
+        let (movimentations_d, totals_d) = Movimentation::get_movimentations(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations_d.len(), 2);
+
+        assert_eq!(totals_d.len(), 6);
+        assert_eq!(totals_d[0].label, "Expenses(payable)".to_string());
+        assert_eq!(totals_d[0].value, 0.0);
+    }
+
+    #[test]
+    fn get_movimentations_status() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let accounts = Account::get_accounts(&mut st);
+
+        assert_eq!(accounts[0].name, "account BB".to_string());
+
+        let (movimentations_tmp, _totals) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations_tmp.len(), 2);
+
+        let mut paid = movimentations_tmp[0].clone();
+        paid.paid_in = Some(NaiveDate::parse_from_str("2018-10-25", "%Y-%m-%d").unwrap());
+        Movimentation::store_movimentation(&mut st, paid);
+
+        let (movimentations_a, totals_a) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations_a.len(), 2);
+
+        assert_eq!(totals_a.len(), 6);
+        assert_eq!(totals_a[0].label, "Expenses(payable)".to_string());
+        assert_eq!(totals_a[0].value, 0.0);
+        assert_eq!(totals_a[1].label, "Incomes(to receive)".to_string());
+        assert_eq!(totals_a[1].value, 10.0);
+        assert_eq!(totals_a[2].label, "Expenses".to_string());
+        assert_eq!(totals_a[2].value, -125.53);
+        assert_eq!(totals_a[3].label, "Incomes".to_string());
+        assert_eq!(totals_a[3].value, 0.0);
+        assert_eq!(totals_a[4].label, "Previous balance".to_string());
+        assert_eq!(totals_a[4].value, 35.0);
+        assert_eq!(totals_a[5].label, "Current balance".to_string());
+        assert_eq!(totals_a[5].value, -90.53);
+
+        let (movimentations_b, totals_b) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::PAID, None, None);
+
+        assert_eq!(movimentations_b.len(), 1);
+
+        assert_eq!(totals_b.len(), 6);
+        assert_eq!(totals_b[0].label, "Expenses(payable)".to_string());
+        assert_eq!(totals_b[0].value, 0.0);
+        assert_eq!(totals_b[1].label, "Incomes(to receive)".to_string());
+        assert_eq!(totals_b[1].value, 10.0);
+        assert_eq!(totals_b[2].label, "Expenses".to_string());
+        assert_eq!(totals_b[2].value, -125.53);
+        assert_eq!(totals_b[3].label, "Incomes".to_string());
+        assert_eq!(totals_b[3].value, 0.0);
+        assert_eq!(totals_b[4].label, "Previous balance".to_string());
+        assert_eq!(totals_b[4].value, 35.0);
+        assert_eq!(totals_b[5].label, "Current balance".to_string());
+        assert_eq!(totals_b[5].value, -90.53);
+
+        let (movimentations_c, totals_c) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::FORPAY, None, None);
+
+        assert_eq!(movimentations_c.len(), 1);
+
+        assert_eq!(totals_c.len(), 6);
+        assert_eq!(totals_c[0].label, "Expenses(payable)".to_string());
+        assert_eq!(totals_c[0].value, 0.0);
+        assert_eq!(totals_c[1].label, "Incomes(to receive)".to_string());
+        assert_eq!(totals_c[1].value, 10.0);
+        assert_eq!(totals_c[2].label, "Expenses".to_string());
+        assert_eq!(totals_c[2].value, -125.53);
+        assert_eq!(totals_c[3].label, "Incomes".to_string());
+        assert_eq!(totals_c[3].value, 0.0);
+        assert_eq!(totals_c[4].label, "Previous balance".to_string());
+        assert_eq!(totals_c[4].value, 35.0);
+        assert_eq!(totals_c[5].label, "Current balance".to_string());
+        assert_eq!(totals_c[5].value, -90.53);
     }
 
     #[test]
