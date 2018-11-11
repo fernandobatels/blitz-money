@@ -241,7 +241,7 @@ impl Movimentation {
                 // Period filter
                 if line.deadline.unwrap() < from || line.deadline.unwrap() > to {
 
-                    if line.deadline.unwrap() < from {
+                    if line.deadline.unwrap() < from && line.paid_in.is_some() {
                         totals[4].value += line.value;
                     }
 
@@ -400,5 +400,174 @@ impl Movimentation {
         }
 
         data.remove_by_id(uuid);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use uuid::Uuid;
+
+    fn populate() -> String {
+
+        let path = "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string();
+
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+
+        Account::store_account(&mut st, Account { uuid: "".to_string(), name: "account AA".to_string(), bank: "bank A".to_string(), currency: "R$".to_string(), open_balance: 0.0, open_balance_date: Some(Local::today().naive_local()) });
+        Account::store_account(&mut st, Account { uuid: "".to_string(), name: "account BB".to_string(), bank: "bank B".to_string(), currency: "R$".to_string(), open_balance: 35.0, open_balance_date: Some(Local::today().naive_local()) });
+
+        let accounts = Account::get_accounts(&mut st);
+
+        Contact::store_contact(&mut st, Contact { uuid: "".to_string(), name: "contact 1".to_string(), city_location: "city A".to_string() });
+        Contact::store_contact(&mut st, Contact { uuid: "".to_string(), name: "contact 2".to_string(), city_location: "city B".to_string() });
+
+        let contacts = Contact::get_contacts(&mut st);
+
+        assert!(st.start_section("movimentations".to_string()));
+
+        let mut data = st.get_section_data("movimentations".to_string());
+
+        data.save(Movimentation {
+            description: "movimentation 1".to_string(),
+            value: 10.00,
+            account: Some(accounts[0].clone()),
+            contact: Some(contacts[0].clone()),
+            deadline: Some(NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap()),
+            ..Default::default()
+        });
+        data.save(Movimentation {
+            description: "movimentation 2".to_string(),
+            value: -125.53,
+            account: Some(accounts[0].clone()),
+            contact: Some(contacts[1].clone()),
+            deadline: Some(NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap()),
+            ..Default::default()
+        });
+        data.save(Movimentation {
+            description: "movimentation 3".to_string(),
+            value: 25.58,
+            account: Some(accounts[1].clone()),
+            contact: Some(contacts[1].clone()),
+            deadline: Some(NaiveDate::parse_from_str("2018-10-15", "%Y-%m-%d").unwrap()),
+            ..Default::default()
+        });
+        data.save(Movimentation {
+            description: "movimentation 4".to_string(),
+            value: 159.02,
+            account: Some(accounts[0].clone()),
+            contact: Some(contacts[0].clone()),
+            deadline: Some(NaiveDate::parse_from_str("2018-08-23", "%Y-%m-%d").unwrap()),
+            ..Default::default()
+        });
+
+        path
+    }
+
+    #[test]
+    fn get_movimentations() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let accounts = Account::get_accounts(&mut st);
+
+        assert_eq!(accounts[0].name, "account BB".to_string());
+
+        let (movimentations, total) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations.len(), 2);
+        assert_eq!(movimentations[0].description, "movimentation 2".to_string());
+        assert_eq!(movimentations[1].description, "movimentation 1".to_string());
+
+        assert_eq!(total.len(), 6);
+        assert_eq!(total[0].label, "Expenses(payable)".to_string());
+        assert_eq!(total[0].value, -125.53);
+        assert_eq!(total[1].label, "Incomes(to receive)".to_string());
+        assert_eq!(total[1].value, 10.0);
+        assert_eq!(total[2].label, "Expenses".to_string());
+        assert_eq!(total[2].value, 0.0);
+        assert_eq!(total[3].label, "Incomes".to_string());
+        assert_eq!(total[3].value, 0.0);
+        assert_eq!(total[4].label, "Previous balance".to_string());
+        assert_eq!(total[4].value, 35.0);
+        assert_eq!(total[5].label, "Current balance".to_string());
+        assert_eq!(total[5].value, 35.0);
+    }
+
+    #[test]
+    fn get_movimentation() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let accounts = Account::get_accounts(&mut st);
+
+        assert_eq!(accounts[0].name, "account BB".to_string());
+
+        let (movimentations, _total) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        let uuid = movimentations[0].uuid.clone();
+
+        let movimentation = Movimentation::get_movimentation(&mut st, uuid);
+
+        assert!(movimentation.is_ok());
+        assert_eq!(movimentation.unwrap().description, "movimentation 2".to_string());
+
+        let movimentatione = Movimentation::get_movimentation(&mut st, "NOOOO".to_string());
+
+        assert!(movimentatione.is_err());
+    }
+
+    #[test]
+    fn store_movimentation() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let accounts = Account::get_accounts(&mut st);
+
+        assert_eq!(accounts[0].name, "account BB".to_string());
+
+        let contacts = Contact::get_contacts(&mut st);
+
+        assert_eq!(contacts[0].name, "contact 2".to_string());
+
+        Movimentation::store_movimentation(&mut st, Movimentation {
+            description: "movimentation 5".to_string(),
+            value: 20.00,
+            account: Some(accounts[0].clone()),
+            contact: Some(contacts[0].clone()),
+            deadline: Some(NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap()),
+            ..Default::default()
+        });
+
+        let (movimentations, _total) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        assert_eq!(movimentations[0].description, "movimentation 5".to_string());
+        assert_eq!(movimentations[1].description, "movimentation 2".to_string());
+        assert_eq!(movimentations[2].description, "movimentation 1".to_string());
+    }
+
+    #[test]
+    fn remove_movimentation() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let accounts = Account::get_accounts(&mut st);
+
+        assert_eq!(accounts[0].name, "account BB".to_string());
+
+        let (movimentations, _total) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
+
+        let uuid = movimentations[0].uuid.clone();
+
+        let movimentation = Movimentation::get_movimentation(&mut st, uuid.clone());
+
+        assert!(movimentation.is_ok());
+
+        Movimentation::remove_movimentation(&mut st, uuid.clone());
+
+        let movimentatione = Movimentation::get_movimentation(&mut st, uuid.clone());
+
+        assert!(movimentatione.is_err());
     }
 }
