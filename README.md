@@ -4,10 +4,143 @@ Inspired on KMyMoney, this application uses on single text file to persist the d
 
 ### Features
 
-- [ ] Manage Accounts
-- [ ] Financial movimentation
+- [x] Manage Accounts
+- [x] Financial movimentation
 - [ ] OFX import
 - [ ] Google Calendar integration
 - [ ] Padronization of imported fields(contacts, tags...)
 - [ ] Reports
 - [ ] Simulations
+
+### How to use
+
+- In all options 'list', like the 'accounts list', you can use the '--use-csv' for get the result in csv instead of a table
+- The interactive mode('-i' option) is better for learning how to use the application
+- All data will be saved in ~/.bmoney.bms file. This means that you permissions file system is the responsible for keep the access controll.
+
+#### Accounts
+
+New accounts:
+
+```shell
+bmoney accounts add [name] [bank] [opening balance date] [opening balance] [currency]
+# Or with interactive mode:
+bmoney accounts add -i
+```
+
+Editing account:
+
+```shell
+bmoney accounts update [id] [name|bank|obd|ob|curency] [value]
+#Or with interactive mode:
+bmoney accounts update -i
+```
+
+Your accounts:
+
+```shell
+bmoney accounts list
+```
+
+Current status of your accounts:
+
+```shell
+bmoney accounts status
+```
+
+Removing account:
+
+```shell
+bmoney accounts rm [id]
+```
+
+#### Contacts
+
+New contacts:
+
+```shell
+bmoney contacts add [name] [city]
+#Or with interactive mode:
+bmoney contacts add -i
+```
+
+Editing contact:
+
+```shell
+bmoney contacts update [id] [name|city_location] [value]
+#Or with interactive mode:
+bmoney contacts update -i
+```
+
+Your contacts:
+
+```shell
+bmoney contacts rm list
+```
+
+Removing contact:
+
+```shell
+bmoney contacts rm [id]
+```
+
+#### Tags
+
+New tags:
+
+```shell
+bmoney tags add [name]
+#Or with interactive mode:
+bmoney tags add -i
+```
+
+Editing tag:
+
+```shell
+bmoney tags update [id] [name] [value]
+#Or with interactive mode:
+bmoney tags update -i
+```
+
+Your tags:
+
+```shell
+```
+
+Removing tag:
+
+```shell
+bmoney tags rm [id]
+```
+
+#### Movimentations
+
+- For make transaction between accounts you only need put id of destination account instead of the id of contact
+
+New accounts:
+
+```shell
+bmoney movimentations add [description] [value] [account id] [contact id] [deadline] [paid in] [tags] [observations]
+#Or with interactive mode:
+bmoney movimentations add -i
+```
+
+Editing account:
+
+```shell
+bmoney movimentations update [id] [description|value|account|contact|deadline|paid|tags|observations] [value]
+#Or with interactive mode:
+bmoney movimentations update -i
+```
+
+Your accounts:
+
+```shell
+bmoney movimentations list [account id] [from] [to]
+```
+
+Removing account:
+
+```shell
+bmoney movimentations rm [id]
+```

@@ -27,7 +27,12 @@ use backend::storage::Storage;
 
 fn main() {
 
-    let storage = Storage { path_str: "/tmp/bmoneytmp.bms".to_string(), file: None, lines: Vec::new() };
+    let home_dir = env::home_dir()
+        .expect("Impossible to get your home dir!");
+    let home_dir_str = home_dir.to_str()
+        .expect("Fail on get your home string!");
+
+    let storage = Storage { path_str: home_dir_str.to_owned() + &"/.bmoney.bms".to_string(), file: None, lines: Vec::new() };
 
     let mut args: Vec<String> = env::args().collect();
 
