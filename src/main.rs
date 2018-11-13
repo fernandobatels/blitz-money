@@ -27,14 +27,24 @@ use backend::storage::Storage;
 
 fn main() {
 
-    let home_dir = env::home_dir()
-        .expect("Impossible to get your home dir!");
-    let home_dir_str = home_dir.to_str()
-        .expect("Fail on get your home string!");
-
-    let storage = Storage { path_str: home_dir_str.to_owned() + &"/.bmoney.bms".to_string(), file: None, lines: Vec::new() };
-
     let mut args: Vec<String> = env::args().collect();
+
+    let path_str: String;
+
+    if let Some(file) = Input::extract_named_param(&mut args, "--storage-file=".to_string()) {
+        // When the user set a file for the storage
+        path_str = file;
+    } else {
+        // Default file path
+        let home_dir = env::home_dir()
+            .expect("Impossible to get your home dir!");
+        let home_dir_str = home_dir.to_str()
+            .expect("Fail on get your home string!");
+
+        path_str = home_dir_str.to_owned() + &"/.bmoney.bms".to_string();
+    }
+
+    let storage = Storage { path_str: path_str, file: None, lines: Vec::new() };
 
     if args.len() == 1 {
         // Without module and action
