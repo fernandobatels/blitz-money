@@ -70,13 +70,13 @@ impl Tag {
     }
 
     // Save updates, or create new, tag on storage
-    pub fn store_tag(storage: &mut Storage, tag: Tag) {
+    pub fn store_tag(storage: &mut Storage, tag: Tag) -> String {
 
         storage.start_section("tags".to_string());
 
         let mut data = storage.get_section_data("tags".to_string());
 
-        data.save(tag);
+        data.save(tag)
     }
 
     // Remvoe tag of storage

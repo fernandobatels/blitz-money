@@ -109,3 +109,53 @@ impl Tags {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use uuid::Uuid;
+    use std::process::Command;
+    use assert_cmd::prelude::*;
+
+    fn populate() -> (String, Vec<String>) {
+
+        let path = "/tmp/bmoney-ui-".to_owned() + &Uuid::new_v4().to_string();
+
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+
+        let mut uuids: Vec<String> = vec![];
+
+        uuids.push(Tag::store_tag(&mut st, Tag { uuid: "".to_string(), name: "tag 1".to_string() }));
+        uuids.push(Tag::store_tag(&mut st, Tag { uuid: "".to_string(), name: "tag 2".to_string() }));
+        uuids.push(Tag::store_tag(&mut st, Tag { uuid: "".to_string(), name: "tag 3".to_string() }));
+        uuids.push(Tag::store_tag(&mut st, Tag { uuid: "".to_string(), name: "tag 4".to_string() }));
+
+        (path, uuids)
+    }
+
+    #[test]
+    fn tags_list() {
+
+        let (path_str, uuids) = populate();
+
+        //Tags::list(st, vec![], true);
+        //.with_stdin();
+
+        let mut main = Command::main_binary().unwrap();
+
+        main.arg("tags")
+            .arg("list")
+            .arg("--storage-file=".to_owned() + &path_str)
+            .arg("--use-csv");
+
+        let mut stdout = String::from("\"Name\",\"#id\"");
+
+        stdout.push_str(&format!("\"tag 4\",\"{}\"", uuids[3]));
+
+        main.assert()
+            .success()
+            .stdout(stdout.as_str());
+    }
+
+}

@@ -13,6 +13,7 @@ extern crate uuid;
 extern crate prettytable;
 extern crate chrono;
 extern crate csv;
+extern crate assert_cmd;
 
 mod ui;
 mod backend;
