@@ -135,6 +135,22 @@ mod tests {
     }
 
     #[test]
+    fn tags_insert() {
+
+        let (path_str, _uuids) = populate();
+
+        let mut main = Command::main_binary().unwrap();
+
+        main.arg("tags")
+            .arg("add")
+            .arg("--storage-file=".to_owned() + &path_str)
+            .arg("\"My new tag\"");
+
+        main.assert()
+            .success();
+    }
+
+    #[test]
     fn tags_list() {
 
         let (path_str, uuids) = populate();
