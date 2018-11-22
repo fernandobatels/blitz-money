@@ -139,9 +139,6 @@ mod tests {
 
         let (path_str, uuids) = populate();
 
-        //Tags::list(st, vec![], true);
-        //.with_stdin();
-
         let mut main = Command::main_binary().unwrap();
 
         main.arg("tags")
@@ -149,13 +146,16 @@ mod tests {
             .arg("--storage-file=".to_owned() + &path_str)
             .arg("--use-csv");
 
-        let mut stdout = String::from("\"Name\",\"#id\"");
+        let mut stdout = String::from("\"Name\",\"#id\"\n");
 
-        stdout.push_str(&format!("\"tag 4\",\"{}\"", uuids[3]));
+        stdout.push_str(&format!("\"tag 4\",\"{}\"\n", uuids[3]));
+        stdout.push_str(&format!("\"tag 3\",\"{}\"\n", uuids[2]));
+        stdout.push_str(&format!("\"tag 2\",\"{}\"\n", uuids[1]));
+        stdout.push_str(&format!("\"tag 1\",\"{}\"\n", uuids[0]));
 
         main.assert()
             .success()
-            .stdout(stdout.as_str());
+            .stdout(stdout.to_owned());
     }
 
 }
