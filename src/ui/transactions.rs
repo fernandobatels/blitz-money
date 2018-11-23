@@ -14,6 +14,7 @@ use backend::accounts::Account;
 use backend::contacts::Contact;
 use backend::tags::Tag;
 use backend::storage::Storage;
+use backend::ofx::Ofx;
 use ui::ui::*;
 
 pub struct Transactions {}
@@ -450,6 +451,22 @@ impl Transactions {
         } else {
             // Help mode
             println!("How to use: bmoney transactions rm [id]");
+        }
+    }
+
+    // Interface to import ofx files
+    pub fn ofx(mut storage: Storage, params: Vec<String>) {
+
+        if params.len() == 2 {
+            // Shell mode
+
+            let mut account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
+            let ofx = Ofx::new(&mut storage, &mut account, params[1].to_owned())
+                .expect("Couldn't open the ofx file");
+
+        } else {
+            // Help mode
+            println!("How to use: bmoney movimentations ofx [account id] /path/to/file.ofx");
         }
     }
 }

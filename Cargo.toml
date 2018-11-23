@@ -9,8 +9,9 @@ authors = ["Luis Fernando Batels <luisfbatels@gmail.com>"]
 
 [dependencies]
 json = "*"
+libc = "*"
 uuid = { version = "0.7", features = ["v4"] }
-prettytable-rs = "^0.8"
-chrono = "0.4"
-csv = "1"
+prettytable-rs = "*"
+chrono = "*"
+csv = "*"
 assert_cmd = "*"

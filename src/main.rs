@@ -14,6 +14,7 @@ extern crate prettytable;
 extern crate chrono;
 extern crate csv;
 extern crate assert_cmd;
+extern crate libc;
 
 mod ui;
 mod backend;
@@ -92,8 +93,10 @@ fn main() {
             Transactions::update(storage, args[3..].to_vec());
         } else if args[2] == "rm" {
             Transactions::rm(storage, args[3..].to_vec());
+        } else if args[2] == "ofx" {
+            Transactions::ofx(storage, args[3..].to_vec());
         } else {
-            println!("How to use: bmoney transactions [list|add|update|rm]");
+            println!("How to use: bmoney transactions [list|add|update|rm|ofx]");
         }
     } else if args[1] == "tags" {
         if args[2] == "list" {
