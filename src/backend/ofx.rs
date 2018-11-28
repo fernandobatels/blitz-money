@@ -8,15 +8,14 @@
 
 use std::fs::File;
 use std::io::prelude::*;
-use dummy_xml::parser::*;
+use xmltree::*;
 use backend::storage::*;
 use backend::accounts::*;
 
 pub struct Ofx<'a> {
     storage: &'a mut Storage,
     account: &'a mut Account,
-    file_doc: Document<'a>,
-    file_path: String,
+    pub file_doc: Box<Element>,
 }
 
 impl<'a> Ofx<'a> {
@@ -41,15 +40,15 @@ impl<'a> Ofx<'a> {
 
         let xml_split: Vec<&str> = file_content.split("<OFX>").collect();
 
-        let xml_str = format!("<OFX>{}", xml_split[1]);
+        let xml_str = format!("<?xml version=\"1.0\" encoding=\"UTF-8\"?><OFX>{}", xml_split[1]);
 
-        let xml = parse_string(&xml_str);
+        let xml = Element::parse(xml_str.as_bytes());
 
         if xml.is_err() {
             return Err("Invalid XML content in OFX file");
         }
 
-        Ok(Ofx { storage: storage, account: account, file_path: file_path, file_doc: xml.unwrap() })
+        Ok(Ofx { storage: storage, account: account, file_doc: Box::new(xml.unwrap()) })
     }
 
 }

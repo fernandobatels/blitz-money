@@ -461,8 +461,11 @@ impl Transactions {
             // Shell mode
 
             let mut account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
-            let ofx = Ofx::new(&mut storage, &mut account, params[1].to_owned())
+
+            let mut ofx = Ofx::new(&mut storage, &mut account, params[1].to_owned())
                 .expect("Couldn't open the ofx file");
+
+            ofx.file_doc.get_mut_child("BANKMSGSRSV1").expect("Can't find name element");
 
         } else {
             // Help mode

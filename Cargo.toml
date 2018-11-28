@@ -9,7 +9,7 @@ authors = ["Luis Fernando Batels <luisfbatels@gmail.com>"]
 
 [dependencies]
 json = "*"
-dummy_xml = "*"
+xmltree = "*"
 uuid = { version = "0.7", features = ["v4"] }
 prettytable-rs = "*"
 chrono = "*"

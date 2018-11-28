@@ -14,7 +14,7 @@ extern crate prettytable;
 extern crate chrono;
 extern crate csv;
 extern crate assert_cmd;
-extern crate dummy_xml;
+extern crate xmltree;
 
 mod ui;
 mod backend;
