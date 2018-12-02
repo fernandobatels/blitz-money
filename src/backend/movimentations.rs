@@ -24,7 +24,7 @@ pub struct Movimentation {
    pub paid_in: Option<NaiveDate>,
    pub created_at: Option<DateTime<Local>>,
    pub updated_at: Option<DateTime<Local>>, // Last update
-   pub transaction: Option<Box<Movimentation>>,
+   pub transfer: Option<Box<Movimentation>>,
    pub tags: Vec<Tag>,
    pub observations: String,
 }
@@ -43,7 +43,7 @@ impl Default for Movimentation {
             paid_in: None,
             created_at: Some(Local::now()),
             updated_at: None,
-            transaction: None,
+            transfer: None,
             tags: vec!(),
             observations: "".to_string()
         }
@@ -79,8 +79,8 @@ impl Model for Movimentation {
             panic!("Deadline not found into a row(id {}) movimentation", uuid);
         }
 
-        if row["contact"].is_null() && row["transaction"].is_null() {
-            // We dont need contact if is a transaction
+        if row["contact"].is_null() && row["transfer"].is_null() {
+            // We dont need contact if is a transfer
             panic!("Contact not found into a row(id {}) movimentation", uuid);
         }
 
@@ -118,28 +118,28 @@ impl Model for Movimentation {
             mov.updated_at = Some(row["updated_at"].to_string().parse::<DateTime<Local>>().unwrap());
         }
 
-        if !row["transaction"].is_empty() && can_recursive {
+        if !row["transfer"].is_empty() && can_recursive {
 
             let mut data = storage.get_section_data("movimentations".to_string());
 
-            if data.find_by_id(row["transaction"].to_string()) {
+            if data.find_by_id(row["transfer"].to_string()) {
 
                 // This instruct the new() method of the other
                 // movimentation for dont't run more recursive operations
                 data.can_recursive = false;
 
                 let mut other = data.next::<Movimentation>()
-                    .expect("Couldn't parse the other transaction");
+                    .expect("Couldn't parse the other transfer");
 
                 // Update the current movimentation with link to
                 // movimentation of other account
-                mov.transaction = Some(Box::new(other));
+                mov.transfer = Some(Box::new(other));
 
                 // And link the movimentation of the oter account
                 // with this
-                other.transaction = Some(Box::new(mov.clone()));
+                other.transfer = Some(Box::new(mov.clone()));
             } else {
-                panic!("Couldn't find the movimentation {} need by {}", row["transaction"], uuid);
+                panic!("Couldn't find the movimentation {} need by {}", row["transfer"], uuid);
             }
         }
 
@@ -178,12 +178,12 @@ impl Model for Movimentation {
 
         if self.contact.is_some() {
             ob["contact"] = self.contact.unwrap().uuid.into();
-        } else if self.transaction.is_none() {
-            panic!("Contact or transaction must be present!");
+        } else if self.transfer.is_none() {
+            panic!("Contact or transfer must be present!");
         }
 
-        if self.transaction.is_some() {
-            ob["transaction"] = self.transaction.unwrap().uuid.into();
+        if self.transfer.is_some() {
+            ob["transfer"] = self.transfer.unwrap().uuid.into();
         }
 
         if self.tags.len() > 0 {
@@ -312,8 +312,8 @@ impl Movimentation {
     // Save updates, or create new, movimentation on storage
     pub fn store_movimentation(storage: &mut Storage, movimentation: Movimentation) {
 
-        if movimentation.transaction.is_some() {
-            panic!("You must be use the Movimentation#store_transaction for transactions!");
+        if movimentation.transfer.is_some() {
+            panic!("You must be use the Movimentation#store_transfer for transfers!");
         }
 
         storage.start_section("movimentations".to_string());
@@ -323,8 +323,8 @@ impl Movimentation {
         data.save(movimentation);
     }
 
-    // Save updates, or create new, transactions movimentations
-    pub fn store_transaction(storage: &mut Storage, movimentation: &mut Movimentation, other: &mut Movimentation) {
+    // Save updates, or create new, transfers movimentations
+    pub fn store_transfer(storage: &mut Storage, movimentation: &mut Movimentation, other: &mut Movimentation) {
 
         storage.start_section("movimentations".to_string());
 
@@ -361,13 +361,13 @@ impl Movimentation {
             // We save the first movimentation to get his uuid
             // and put on the second
             movimentation.uuid = data.save(movimentation.to_owned());
-            other.transaction = Some(Box::new(movimentation.clone()));
+            other.transfer = Some(Box::new(movimentation.clone()));
 
             // Now, we save de second movimentation to get his
             // uuid and put on the first. On this point the second
             // has the first uuid
             other.uuid = data.save(other.to_owned());
-            movimentation.transaction = Some(Box::new(other.clone()));
+            movimentation.transfer = Some(Box::new(other.clone()));
 
             // And finaly, we store the first for save the
             // uuid of second
@@ -375,8 +375,8 @@ impl Movimentation {
         } else {
             // Update
 
-            other.transaction = Some(Box::new(movimentation.clone()));
-            movimentation.transaction = Some(Box::new(other.clone()));
+            other.transfer = Some(Box::new(movimentation.clone()));
+            movimentation.transfer = Some(Box::new(other.clone()));
 
             data.save(movimentation.to_owned());
             data.save(other.to_owned());
@@ -394,8 +394,8 @@ impl Movimentation {
             let mov = data.next::<Movimentation>()
                 .expect("Clound't parse the movimentation");
 
-            if mov.transaction.is_some() {
-                data.remove_by_id(mov.transaction.unwrap().uuid);
+            if mov.transfer.is_some() {
+                data.remove_by_id(mov.transfer.unwrap().uuid);
             }
         }
 
@@ -551,7 +551,7 @@ mod tests {
     }
 
     #[test]
-    fn transactions() {
+    fn transfers() {
 
         let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
 
@@ -577,7 +577,7 @@ mod tests {
         to.account = Some(accounts[1].clone());
         to.description = "movimentation to".to_string();
 
-        Movimentation::store_transaction(&mut st, &mut from, &mut to);
+        Movimentation::store_transfer(&mut st, &mut from, &mut to);
 
         let (movimentations_a, totals_a) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
 
@@ -595,11 +595,11 @@ mod tests {
         assert_eq!(totals_b[0].label, "Expenses(payable)".to_string());
         assert_eq!(totals_b[0].value, -20.0);
 
-        // Paying the transaction
+        // Paying the transfer
         let mut paid = movimentations_a[0].clone();
         assert_eq!(paid.description, "movimentation from".to_string());
         paid.paid_in = Some(NaiveDate::parse_from_str("2018-10-19", "%Y-%m-%d").unwrap());
-        Movimentation::store_transaction(&mut st, &mut paid.clone(), &mut paid.transaction.unwrap());
+        Movimentation::store_transfer(&mut st, &mut paid.clone(), &mut paid.transfer.unwrap());
 
         let (movimentations_c, totals_c) = Movimentation::get_movimentations(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, None);
 

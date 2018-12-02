@@ -89,13 +89,13 @@ impl Movimentations {
                         .expect("Unable to set value on movimentation");
                 }
 
-                if movimentation.transaction.is_some() {
+                if movimentation.transfer.is_some() {
                     row.set_cell(cell!("T"), 1)
                         .expect("Unable to set T on movimentation");
 
                     // In trascations we show the destination account on place of contact
-                    row.set_cell(cell!(movimentation.transaction.unwrap().account.clone().unwrap().name + &"(account)".to_owned()), 5)
-                        .expect("Unable to set account of other transaction on movimentation");
+                    row.set_cell(cell!(movimentation.transfer.unwrap().account.clone().unwrap().name + &"(account)".to_owned()), 5)
+                        .expect("Unable to set account of other transfer on movimentation");
                 } else {
                     row.set_cell(cell!(movimentation.contact.clone().unwrap().name), 5)
                         .expect("Unable to set contact on movimentation");
@@ -211,12 +211,12 @@ impl Movimentations {
                 for co in Contact::get_contacts(&mut storage) {
                     contacts.push((co.uuid, co.name));
                 }
-                // For transactions
+                // For transfers
                 for (uuid, name) in accounts {
                     contacts.push((uuid, name + &"(account)".to_owned()));
                 }
 
-                contact_uuid = Input::read_option("Contact or other account(for transaction)".to_string(), true, None, contacts);
+                contact_uuid = Input::read_option("Contact or other account(for transfer)".to_string(), true, None, contacts);
 
                 deadline = Input::read_date("Deadline".to_string(), true, None);
                 paid_in = Input::read_date("Paid in".to_string(), false, None);
@@ -257,20 +257,20 @@ impl Movimentations {
             //Transaction
             if contact.is_none() {
 
-                let mut transaction = mov.clone();
+                let mut transfer = mov.clone();
 
                 // Destination account
-                transaction.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
+                transfer.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
 
                 // Update the current movimentation with link to
                 // movimentation of other account
-                mov.transaction = Some(Box::new(transaction.clone()));
+                mov.transfer = Some(Box::new(transfer.clone()));
 
                 // And link the movimentation of the other account
                 // with this
-                transaction.transaction = Some(Box::new(mov.clone()));
+                transfer.transfer = Some(Box::new(mov.clone()));
 
-                Movimentation::store_transaction(&mut storage, &mut mov, &mut transaction);
+                Movimentation::store_transfer(&mut storage, &mut mov, &mut transfer);
             } else {
                 Movimentation::store_movimentation(&mut storage, mov);
             }
@@ -311,8 +311,8 @@ impl Movimentations {
                     .expect("Couldn't parse the string to money. The format is 00000.00");
             }
 
-            if movimentation.transaction.is_some() {
-                Movimentation::store_transaction(&mut storage, &mut movimentation.clone(), &mut movimentation.transaction.unwrap());
+            if movimentation.transfer.is_some() {
+                Movimentation::store_transfer(&mut storage, &mut movimentation.clone(), &mut movimentation.transfer.unwrap());
             } else {
                 Movimentation::store_movimentation(&mut storage, movimentation);
             }
@@ -332,7 +332,7 @@ impl Movimentations {
                 movimentation.account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
             } else if params[1] == "contact" {
                 let contact_uuid = Input::param("Contact".to_string(), true, params.clone(), 2);
-                if movimentation.transaction.is_some() {
+                if movimentation.transfer.is_some() {
                     movimentation.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
                 } else {
                     movimentation.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
@@ -359,8 +359,8 @@ impl Movimentations {
                 panic!("Field not found!");
             }
 
-            if movimentation.transaction.is_some() {
-                Movimentation::store_transaction(&mut storage, &mut movimentation.clone(), &mut movimentation.transaction.unwrap());
+            if movimentation.transfer.is_some() {
+                Movimentation::store_transfer(&mut storage, &mut movimentation.clone(), &mut movimentation.transfer.unwrap());
             } else {
                 Movimentation::store_movimentation(&mut storage, movimentation);
             }
@@ -387,8 +387,8 @@ impl Movimentations {
 
             let contact_uuid: String;
 
-            if movimentation.transaction.is_some() {
-                contact_uuid = Input::read_option("Destination account".to_string(), true, Some(movimentation.transaction.clone().unwrap().uuid), accounts);
+            if movimentation.transfer.is_some() {
+                contact_uuid = Input::read_option("Destination account".to_string(), true, Some(movimentation.transfer.clone().unwrap().uuid), accounts);
             } else {
                 let mut contacts: Vec<(String, String)> = vec![];
                 for co in Contact::get_contacts(&mut storage) {
@@ -422,13 +422,13 @@ impl Movimentations {
 
             movimentation.observations = Input::read("Observations".to_string(), false, Some(movimentation.observations));
 
-            if movimentation.transaction.is_some() {
-                let mut transaction = movimentation.clone().transaction.unwrap();
+            if movimentation.transfer.is_some() {
+                let mut transfer = movimentation.clone().transfer.unwrap();
 
                 // Destination account
-                transaction.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
+                transfer.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
 
-                Movimentation::store_transaction(&mut storage, &mut movimentation, &mut transaction);
+                Movimentation::store_transfer(&mut storage, &mut movimentation, &mut transfer);
             } else {
                 Movimentation::store_movimentation(&mut storage, movimentation);
             }
