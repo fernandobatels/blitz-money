@@ -22,7 +22,7 @@ use std::env;
 use ui::tags::Tags;
 use ui::accounts::Accounts;
 use ui::contacts::Contacts;
-use ui::movimentations::Movimentations;
+use ui::transactions::Transactions;
 use ui::ui::Input;
 use backend::storage::Storage;
 
@@ -83,17 +83,17 @@ fn main() {
         } else {
             println!("How to use: bmoney contacts [list|add|update|rm]");
         }
-    } else if args[1] == "movimentations" {
+    } else if args[1] == "transactions" {
         if args[2] == "list" {
-            Movimentations::list(storage, args[3..].to_vec(), is_csv);
+            Transactions::list(storage, args[3..].to_vec(), is_csv);
         } else if args[2] == "add" {
-            Movimentations::add(storage, args[3..].to_vec());
+            Transactions::add(storage, args[3..].to_vec());
         } else if args[2] == "update" {
-            Movimentations::update(storage, args[3..].to_vec());
+            Transactions::update(storage, args[3..].to_vec());
         } else if args[2] == "rm" {
-            Movimentations::rm(storage, args[3..].to_vec());
+            Transactions::rm(storage, args[3..].to_vec());
         } else {
-            println!("How to use: bmoney movimentations [list|add|update|rm]");
+            println!("How to use: bmoney transactions [list|add|update|rm]");
         }
     } else if args[1] == "tags" {
         if args[2] == "list" {

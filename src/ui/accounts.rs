@@ -11,8 +11,8 @@ use backend::storage::Storage;
 use ui::ui::*;
 use chrono::{Local, prelude::Datelike, NaiveDate};
 use prettytable::{Row, Cell, Attr, color};
-use backend::movimentations::Movimentation;
-use backend::movimentations::StatusFilter;
+use backend::transactions::Transaction;
+use backend::transactions::StatusFilter;
 
 pub struct Accounts {}
 
@@ -63,7 +63,7 @@ impl Accounts {
 
         for account in accounts {
 
-            let (_, totals) = Movimentation::get_movimentations(&mut storage, account.clone(), from, to, StatusFilter::ALL, None, None);
+            let (_, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, StatusFilter::ALL, None, None);
 
             let mut cols: Vec<Cell>;
 

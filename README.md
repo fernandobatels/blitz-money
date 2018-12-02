@@ -5,7 +5,7 @@ Inspired on KMyMoney, this application uses on single text file to persist the d
 ### Features
 
 - [x] Manage Accounts
-- [x] Financial movimentation
+- [x] Financial transaction
 - [ ] OFX import
 - [ ] Google Calendar integration
 - [ ] Padronization of imported fields(contacts, tags...)
@@ -113,34 +113,34 @@ Removing tag:
 bmoney tags rm [id]
 ```
 
-#### Movimentations
+#### Transactions
 
-- For make transaction between accounts you only need put id of destination account instead of the id of contact
+- For make transfer between accounts you only need put id of destination account instead of the id of contact
 
 New accounts:
 
 ```shell
-bmoney movimentations add [description] [value] [account id] [contact id] [deadline] [paid in] [tags] [observations]
+bmoney transactions add [description] [value] [account id] [contact id] [deadline] [paid in] [tags] [observations]
 #Or with interactive mode:
-bmoney movimentations add -i
+bmoney transactions add -i
 ```
 
 Editing account:
 
 ```shell
-bmoney movimentations update [id] [description|value|account|contact|deadline|paid|tags|observations] [value]
+bmoney transactions update [id] [description|value|account|contact|deadline|paid|tags|observations] [value]
 #Or with interactive mode:
-bmoney movimentations update -i
+bmoney transactions update -i
 ```
 
 Your accounts:
 
 ```shell
-bmoney movimentations list [account id] [from] [to]
+bmoney transactions list [account id] [from] [to]
 ```
 
 Removing account:
 
 ```shell
-bmoney movimentations rm [id]
+bmoney transactions rm [id]
 ```
