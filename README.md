@@ -117,7 +117,7 @@ bmoney tags rm [id]
 
 - For make transfer between accounts you only need put id of destination account instead of the id of contact
 
-New accounts:
+New transactions:
 
 ```shell
 bmoney transactions add [description] [value] [account id] [contact id] [deadline] [paid in] [tags] [observations]
@@ -125,7 +125,7 @@ bmoney transactions add [description] [value] [account id] [contact id] [deadlin
 bmoney transactions add -i
 ```
 
-Editing account:
+Editing transaction:
 
 ```shell
 bmoney transactions update [id] [description|value|account|contact|deadline|paid|tags|observations] [value]
@@ -133,13 +133,13 @@ bmoney transactions update [id] [description|value|account|contact|deadline|paid
 bmoney transactions update -i
 ```
 
-Your accounts:
+Your transactions:
 
 ```shell
 bmoney transactions list [account id] [from] [to]
 ```
 
-Removing account:
+Removing transaction:
 
 ```shell
 bmoney transactions rm [id]
