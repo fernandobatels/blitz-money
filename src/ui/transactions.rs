@@ -465,7 +465,10 @@ impl Transactions {
             let mut ofx = Ofx::new(&mut storage, &mut account, params[1].to_owned())
                 .expect("Couldn't open the ofx file");
 
-            ofx.file_doc.get_mut_child("BANKMSGSRSV1").expect("Can't find name element");
+            //ofx.file_doc.get_mut_child("BANKMSGSRSV1").expect("Can't find name element");
+            for mov in ofx.get_movimentations() {
+                println!("{}", mov.memo);
+            }
 
         } else {
             // Help mode

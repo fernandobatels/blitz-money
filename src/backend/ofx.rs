@@ -9,6 +9,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 use xmltree::*;
+use chrono::{Local, DateTime, NaiveDate};
 use backend::storage::*;
 use backend::accounts::*;
 
@@ -16,6 +17,13 @@ pub struct Ofx<'a> {
     storage: &'a mut Storage,
     account: &'a mut Account,
     pub file_doc: Box<Element>,
+}
+
+pub struct Movimentation {
+    pub posted_at: Option<NaiveDate>,
+    pub amount: f32,
+    pub fitid: String, // Financial instituion id
+    pub memo: String
 }
 
 impl<'a> Ofx<'a> {
@@ -51,4 +59,10 @@ impl<'a> Ofx<'a> {
         Ok(Ofx { storage: storage, account: account, file_doc: Box::new(xml.unwrap()) })
     }
 
+    // Get all movimentations of OFX file
+    pub fn get_movimentations(self) -> Vec<Movimentation> {
+        let mut movimentations: Vec<Movimentation> = vec![];
+
+        return movimentations;
+    }
 }
