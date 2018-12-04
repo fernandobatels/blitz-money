@@ -255,26 +255,7 @@ impl Transactions {
                 ..Default::default()
             };
 
-            //Transfer
-            if contact.is_none() {
-
-                let mut transfer = mov.clone();
-
-                // Destination account
-                transfer.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
-
-                // Update the current transaction with link to
-                // transaction of other account
-                mov.transfer = Some(Box::new(transfer.clone()));
-
-                // And link the transaction of the other account
-                // with this
-                transfer.transfer = Some(Box::new(mov.clone()));
-
-                Transaction::store_transfer(&mut storage, &mut mov, &mut transfer);
-            } else {
-                Transaction::store_transaction(&mut storage, mov);
-            }
+            Transaction::make_transaction_or_transfer(&mut storage, &mut mov, contact_uuid);
 
         } else {
             // Help mode
@@ -460,13 +441,60 @@ impl Transactions {
         if params.len() == 2 {
             // Shell mode
 
-            let mut account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
+            let account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
 
-            let mut ofx = Ofx::new(&mut storage, &mut account, params[1].to_owned())
+            let mut contacts: Vec<(String, String)> = vec![];
+            for co in Contact::get_contacts(&mut storage) {
+                contacts.push((co.uuid, co.name));
+            }
+            // For transfers
+            for account in Account::get_accounts(&mut storage) {
+                contacts.push((account.uuid, account.name + &"(account)".to_owned()));
+            }
+
+            let mut tags_ops: Vec<(String, String)> = vec![];
+            for tag in Tag::get_tags(&mut storage) {
+                tags_ops.push((tag.uuid, tag.name));
+            }
+
+            let ofx = Ofx::new(params[1].to_owned())
                 .expect("Couldn't open the ofx file");
 
-            for mov in ofx.get_transactions() {
-                println!("{:?}", mov);
+            let transactions = ofx.get_transactions();
+
+            for (i, ofx_tr) in transactions.iter().enumerate() {
+                println!("Transaction {}/{}", i + 1, transactions.len());
+                println!("{} on {}, memo: {}", account.format_value(ofx_tr.amount), ofx_tr.posted_at.unwrap(), ofx_tr.memo);
+
+                if Input::read("Add(y) or skip(n)?".to_string(), true, None) != "y" {
+                    continue;
+                }
+
+                let mut tr = ofx_tr.clone().build_transaction();
+
+                tr.account = Some(account.clone());
+
+                tr.description = Input::read("Transaction description".to_string(), true, Some(tr.description));
+
+                let contact_uuid = Input::read_option("Contact or other account(for transfer)".to_string(), true, None, contacts.clone());
+
+                tr.contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
+                    Ok(con) => Some(con),
+                    Err(_)  => None
+                };
+
+                tr.tags = Input::read_options("Tags".to_string(), false, vec![], tags_ops.clone())
+                    .iter()
+                    .map(
+                        |tag| Tag::get_tag(&mut storage, tag.to_string())
+                                    .expect("Tag not found")
+                    )
+                    .collect();
+
+                tr.observations = Input::read("Observations".to_string(), false, None);
+
+                Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
+
             }
 
         } else {

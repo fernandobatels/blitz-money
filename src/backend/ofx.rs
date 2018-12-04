@@ -9,28 +9,25 @@
 use std::fs::File;
 use std::io::prelude::*;
 use xmltree::*;
-use chrono::{Local, DateTime, NaiveDate};
-use backend::storage::*;
-use backend::accounts::*;
+use chrono::NaiveDate;
+use backend::transactions;
 
-pub struct Ofx<'a> {
-    storage: &'a mut Storage,
-    account: &'a mut Account,
+pub struct Ofx {
     pub file_doc: Box<Element>,
 }
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct Transaction {
     pub posted_at: Option<NaiveDate>,
     pub amount: f32,
     pub fitid: String, // Financial instituion id
-    pub memo: String
+    pub memo: String,
 }
 
-impl<'a> Ofx<'a> {
+impl Ofx {
 
     // Create the object for import ofx file
-    pub fn new(storage: &'a mut Storage, account: &'a mut Account, file_path: String) -> Result<Ofx<'a>, &'static str> {
+    pub fn new(file_path: String) -> Result<Ofx, &'static str> {
 
         let file = File::open(file_path.clone());
 
@@ -57,18 +54,18 @@ impl<'a> Ofx<'a> {
             return Err("Invalid XML content in OFX file");
         }
 
-        Ok(Ofx { storage: storage, account: account, file_doc: Box::new(xml.unwrap()) })
+        Ok(Ofx { file_doc: Box::new(xml.unwrap()) })
     }
 
     // Get all transactions of OFX file
-    pub fn get_transactions(mut self) -> Vec<Transaction> {
+    pub fn get_transactions(&self) -> Vec<Transaction> {
         let mut transactions: Vec<Transaction> = vec![];
 
         let tran_list = self.file_doc
-            .get_mut_child("BANKMSGSRSV1").expect("Can't find BANKMSGSRSV1 element")
-            .get_mut_child("STMTTRNRS").expect("Can't find STMTTRNRS element")
-            .get_mut_child("STMTRS").expect("Can't find STMTRS element")
-            .get_mut_child("BANKTRANLIST").expect("Can't find BANKTRANLIST element");
+            .get_child("BANKMSGSRSV1").expect("Can't find BANKMSGSRSV1 element")
+            .get_child("STMTTRNRS").expect("Can't find STMTTRNRS element")
+            .get_child("STMTRS").expect("Can't find STMTRS element")
+            .get_child("BANKTRANLIST").expect("Can't find BANKTRANLIST element");
 
         for tr in tran_list.clone().children {
             if tr.name == "STMTTRN".to_string() {
@@ -98,6 +95,23 @@ impl<'a> Ofx<'a> {
             }
         }
 
-        return transactions;
+        transactions
     }
+}
+
+impl Transaction {
+
+    // Make a transaction for storage
+    pub fn build_transaction(self) -> transactions::Transaction {
+        transactions::Transaction {
+            description: self.memo.clone(),
+            value: self.amount,
+            deadline: self.posted_at,
+            paid_in: self.posted_at,
+            ofx_memo: self.memo.clone(),
+            ofx_fitid: self.fitid.clone(),
+            ..Default::default()
+        }
+    }
+
 }

@@ -27,6 +27,8 @@ pub struct Transaction {
    pub transfer: Option<Box<Transaction>>,
    pub tags: Vec<Tag>,
    pub observations: String,
+   pub ofx_memo: String,
+   pub ofx_fitid: String
 }
 
 impl Default for Transaction {
@@ -45,7 +47,9 @@ impl Default for Transaction {
             updated_at: None,
             transfer: None,
             tags: vec!(),
-            observations: "".to_string()
+            observations: "".to_string(),
+            ofx_memo: "".to_string(),
+            ofx_fitid: "".to_string()
         }
     }
 }
@@ -155,6 +159,12 @@ impl Model for Transaction {
             mov.observations = row["observations"].to_string();
         }
 
+        if !row["ofx_memo"].is_empty() && !row["ofx_fitid"].is_empty() {
+            // We only accept, for a valid ofx reference, if have a fitid
+            mov.ofx_memo = row["ofx_memo"].to_string();
+            mov.ofx_fitid = row["ofx_fitid"].to_string();
+        }
+
         mov
     }
 
@@ -197,6 +207,11 @@ impl Model for Transaction {
 
         if !self.observations.is_empty() {
             ob["observations"] = self.observations.into();
+        }
+
+        if !self.ofx_memo.is_empty() && !self.ofx_fitid.is_empty() {
+            ob["ofx_memo"] = self.ofx_memo.into();
+            ob["ofx_fitid"] = self.ofx_fitid.into();
         }
 
         (self.uuid.clone(), self.uuid.is_empty(), ob)
@@ -400,6 +415,31 @@ impl Transaction {
         }
 
         data.remove_by_id(uuid);
+    }
+
+    // Store the trasaction with validation if is a tranfer
+    pub fn make_transaction_or_transfer(storage: &mut Storage, transaction: &mut Transaction, contact_uuid: String) {
+
+        //Transfer
+        if transaction.contact.is_none() {
+
+            let mut transfer = transaction.clone();
+
+            // Destination account
+            transfer.account = Some(Account::get_account(storage, contact_uuid).unwrap());
+
+            // Update the current transaction with link to
+            // transaction of other account
+            transaction.transfer = Some(Box::new(transfer.clone()));
+
+            // And link the transaction of the other account
+            // with this
+            transfer.transfer = Some(Box::new(transaction.clone()));
+
+            Transaction::store_transfer(storage, transaction, &mut transfer);
+        } else {
+            Transaction::store_transaction(storage, transaction.to_owned());
+        }
     }
 }
 
