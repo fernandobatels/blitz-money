@@ -466,24 +466,44 @@ impl Transactions {
                 println!("Transaction {}/{}", i + 1, transactions.len());
                 println!("{} on {}, memo: {}", account.format_value(ofx_tr.amount), ofx_tr.posted_at.unwrap(), ofx_tr.memo);
 
-                if Input::read("Add(y) or skip(n)?".to_string(), true, None) != "y" {
-                    continue;
+                let mut tr = ofx_tr.clone().build_transaction(&mut storage, account.clone());
+
+                let mut question = "Add(y) or skip(n)?".to_string();
+
+                if !tr.uuid.is_empty() {
+                    println!("Already added in this account with description \"{}\" for contact \"{}\" in {}", tr.description, tr.contact.clone().unwrap().name, tr.created_at.unwrap());
+                    question = "Update(y) or skip(n)?".to_string();
                 }
 
-                let mut tr = ofx_tr.clone().build_transaction();
+                if Input::read(question, false, None) != "y" {
+                    continue;
+                }
 
                 tr.account = Some(account.clone());
 
                 tr.description = Input::read("Transaction description".to_string(), true, Some(tr.description));
 
-                let contact_uuid = Input::read_option("Contact or other account(for transfer)".to_string(), true, None, contacts.clone());
+
+                let mut current_contact: Option<String> = None;
+
+                if let Some(contact) = tr.contact {
+                    current_contact = Some(contact.uuid);
+                }
+
+                let contact_uuid = Input::read_option("Contact or other account(for transfer)".to_string(), true, current_contact, contacts.clone());
 
                 tr.contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
                     Ok(con) => Some(con),
                     Err(_)  => None
                 };
 
-                tr.tags = Input::read_options("Tags".to_string(), false, vec![], tags_ops.clone())
+
+                let current_tags: Vec<String> = tr.tags.clone()
+                    .iter()
+                    .map(|tag| tag.uuid.clone())
+                    .collect();
+
+                tr.tags = Input::read_options("Tags".to_string(), false, current_tags, tags_ops.clone())
                     .iter()
                     .map(
                         |tag| Tag::get_tag(&mut storage, tag.to_string())
@@ -491,7 +511,8 @@ impl Transactions {
                     )
                     .collect();
 
-                tr.observations = Input::read("Observations".to_string(), false, None);
+
+                tr.observations = Input::read("Observations".to_string(), false, Some(tr.observations));
 
                 Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
 

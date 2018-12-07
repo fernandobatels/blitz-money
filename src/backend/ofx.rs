@@ -11,6 +11,8 @@ use std::io::prelude::*;
 use xmltree::*;
 use chrono::NaiveDate;
 use backend::transactions;
+use backend::storage::Storage;
+use backend::accounts::Account;
 
 pub struct Ofx {
     pub file_doc: Box<Element>,
@@ -101,8 +103,16 @@ impl Ofx {
 
 impl Transaction {
 
-    // Make a transaction for storage
-    pub fn build_transaction(self) -> transactions::Transaction {
+    // Make a transaction for storage or return the old
+    // transaction if the fitid exists on transactions of
+    // the account
+    pub fn build_transaction(self, storage: &mut Storage, account: Account) -> transactions::Transaction {
+
+        if let Some(transaction) = self.clone().find_transaction_by_fitid(storage, account) {
+            return transaction;
+        }
+
+
         transactions::Transaction {
             description: self.memo.clone(),
             value: self.amount,
@@ -112,6 +122,21 @@ impl Transaction {
             ofx_fitid: self.fitid.clone(),
             ..Default::default()
         }
+    }
+
+    // Get, if already exists, the trasaction by fitid
+    fn find_transaction_by_fitid(self, storage: &mut Storage, account: Account) -> Option<transactions::Transaction> {
+
+        // TODO: Make and use 'index find' for this
+        let transactions = transactions::Transaction::get_transactions_simple(storage, account);
+
+        for transaction in transactions {
+            if transaction.ofx_fitid == self.fitid {
+                return Some(transaction);
+            }
+        }
+
+        None
     }
 
 }

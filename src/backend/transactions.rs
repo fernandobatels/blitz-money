@@ -233,8 +233,24 @@ impl Transaction {
         self.paid_in.unwrap().to_string().clone()
     }
 
-    // Return a list with all transactions
-    // and total
+    // Return a list with all transactions of account
+    pub fn get_transactions_simple(storage: &mut Storage, account: Account) -> Vec<Transaction> {
+
+        storage.start_section("transactions".to_string());
+
+        let mut data = storage.get_section_data("transactions".to_string());
+        let mut list: Vec<Transaction> = vec![];
+
+        while let Ok(line) = data.next::<Transaction>() {
+            if account.uuid == line.account.clone().unwrap().uuid {
+                list.push(line);
+            }
+        }
+
+        list
+    }
+
+    // Return a list with all transactions of account and totals, with more filters
     pub fn get_transactions(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, filter_status: StatusFilter, filter_uuid: Option<String>, filter_tag: Option<String>) -> (Vec<Transaction>, Vec<Total>) {
 
         storage.start_section("transactions".to_string());
@@ -519,6 +535,23 @@ mod tests {
         assert_eq!(transactions.len(), 2);
         assert_eq!(transactions[0].description, "transaction 2".to_string());
         assert_eq!(transactions[1].description, "transaction 1".to_string());
+    }
+
+    #[test]
+    fn get_transactions_simple() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+
+        let accounts = Account::get_accounts(&mut st);
+
+        assert_eq!(accounts[0].name, "account BB".to_string());
+
+        let transactions = Transaction::get_transactions_simple(&mut st, accounts[0].clone());
+
+        assert_eq!(transactions.len(), 3);
+        assert_eq!(transactions[0].description, "transaction 4".to_string());
+        assert_eq!(transactions[1].description, "transaction 2".to_string());
+        assert_eq!(transactions[2].description, "transaction 1".to_string());
     }
 
     #[test]
