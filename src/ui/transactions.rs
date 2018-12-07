@@ -60,9 +60,9 @@ impl Transactions {
             let mut table = Output::new_table();
 
             if show_all {
-                table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id", b->"Observations", b->"Created at", b->"Last update"]);
+                table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id", b->"By ofx", b->"Observations", b->"Created at", b->"Last update"]);
             } else {
-                table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id"]);
+                table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id", b->"By ofx"]);
             }
 
             for transaction in transactions {
@@ -72,6 +72,11 @@ impl Transactions {
                     .map(|tag| tag.name.clone())
                     .collect();
 
+                let mut by_ofx = "No".to_string();
+                if !transaction.ofx_fitid.is_empty() {
+                    by_ofx = "Yes".to_string();
+                }
+
                 let mut row = table.add_row(row![
                     transaction.description,
                     "C",
@@ -80,7 +85,8 @@ impl Transactions {
                     transaction.paid_in_formmated(),
                     "",
                     tags.join(", "),
-                    transaction.uuid
+                    transaction.uuid,
+                    by_ofx
                 ]);
 
                 if transaction.value < 0.0 {
@@ -94,7 +100,7 @@ impl Transactions {
                     row.set_cell(cell!("T"), 1)
                         .expect("Unable to set T on transaction");
 
-                    // In trascations we show the destination account on place of contact
+                    // In transcations we show the destination account on place of contact
                     row.set_cell(cell!(transaction.transfer.unwrap().account.clone().unwrap().name + &"(account)".to_owned()), 5)
                         .expect("Unable to set account of other transfer on transaction");
                 } else {
