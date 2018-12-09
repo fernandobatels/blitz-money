@@ -477,7 +477,7 @@ impl Transactions {
                 let mut question = "Add(y) or skip(n)?".to_string();
 
                 if !tr.uuid.is_empty() {
-                    println!("Already added in this account with description \"{}\" for contact \"{}\" in {}", tr.description, tr.contact.clone().unwrap().name, tr.created_at.unwrap());
+                    println!("Already added in this account with description \"{}\" in {}", tr.description, tr.created_at.unwrap());
                     question = "Update(y) or skip(n)?".to_string();
                 }
 
