@@ -6,7 +6,7 @@ Inspired on KMyMoney, this application uses on single text file to persist the d
 
 - [x] Manage Accounts
 - [x] Financial transaction
-- [ ] OFX import
+- [x] OFX import
 - [ ] Google Calendar integration
 - [ ] Padronization of imported fields(contacts, tags...)
 - [ ] Reports
