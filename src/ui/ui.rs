@@ -121,11 +121,17 @@ impl Input {
     }
 
     // Read a option from stdin
-    pub fn read_option(mut label: String, is_required: bool, current_value: Option<String>, options: Vec<(String, String)>) -> String {
+    pub fn read_option(mut label: String, is_required: bool, current_value: Option<String>, mut options: Vec<(String, String)>) -> String {
 
         if options.len() == 0 {
+            if !is_required {
+                return "".to_string();
+            }
+
             panic!("No options avaliable for {}", label);
         }
+
+        options.sort_by( | (_, a), (_, b) | a.cmp(&b) );
 
         label.push_str(", options avaliable:");
         for (i, (_, option)) in options.iter().enumerate() {
@@ -151,11 +157,17 @@ impl Input {
     }
 
     // Read options from stdin
-    pub fn read_options(mut label: String, is_required: bool, current_value: Vec<String>, options: Vec<(String, String)>) -> Vec<String> {
+    pub fn read_options(mut label: String, is_required: bool, current_value: Vec<String>, mut options: Vec<(String, String)>) -> Vec<String> {
 
         if options.len() == 0 {
+            if !is_required {
+                return vec!();
+            }
+
             panic!("No options avaliable for {}", label);
         }
+
+        options.sort_by( | (_, a), (_, b) | a.cmp(&b) );
 
         label.push_str(", options avaliable:");
         for (i, (_, option)) in options.iter().enumerate() {

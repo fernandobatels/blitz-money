@@ -131,7 +131,7 @@ impl Transaction {
         let transactions = transactions::Transaction::get_transactions_simple(storage, account);
 
         for transaction in transactions {
-            if transaction.ofx_fitid == self.fitid {
+            if transaction.ofx_fitid == self.fitid && transaction.ofx_memo == self.memo {
                 return Some(transaction);
             }
         }

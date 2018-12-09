@@ -284,23 +284,25 @@ impl Transaction {
         while let Ok(line) = data.next::<Transaction>() {
             if account.uuid == line.account.clone().unwrap().uuid && line.merged_in.is_empty() {
 
-                // Period filter
-                if line.deadline.unwrap() < from || line.deadline.unwrap() > to {
+                // Totals: Previous + Current balance
+                if line.paid_in.is_some() {
+                    totals[5].value += line.value;
 
-                    if line.deadline.unwrap() < from && line.paid_in.is_some() {
+                    if line.deadline.unwrap() < from {
                         totals[4].value += line.value;
                     }
+                }
 
+                // Period filter
+                if line.deadline.unwrap() < from || line.deadline.unwrap() > to {
                     continue;
                 }
 
                 let mut filter_status_ok: bool;
 
-                // Totals
                 if line.paid_in.is_some() {
 
-                    totals[5].value += line.value;
-
+                    // Totals: Expenses + Incomes paids
                     if line.value >= 0.0 {
                         totals[3].value += line.value;
                     } else {
@@ -310,6 +312,7 @@ impl Transaction {
                     filter_status_ok = StatusFilter::PAID == filter_status || StatusFilter::ALL == filter_status;
                 } else {
 
+                    // Totals: Expenses + Incomes payables
                     if line.value >= 0.0 {
                         totals[1].value += line.value;
                     } else {

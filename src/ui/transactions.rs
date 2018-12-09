@@ -544,7 +544,11 @@ impl Transactions {
 
             secondary.merged_in = principal.uuid;
 
-            Transaction::store_transaction(&mut storage, secondary);
+            if secondary.transfer.is_some() {
+                Transaction::store_transfer(&mut storage, &mut secondary.clone(), &mut secondary.transfer.unwrap());
+            } else {
+                Transaction::store_transaction(&mut storage, secondary);
+            }
 
         } else {
             // Help mode
