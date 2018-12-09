@@ -15,6 +15,7 @@ extern crate chrono;
 extern crate csv;
 extern crate assert_cmd;
 extern crate xmltree;
+extern crate dirs;
 
 mod ui;
 mod backend;
@@ -38,7 +39,7 @@ fn main() {
         path_str = file;
     } else {
         // Default file path
-        let home_dir = env::home_dir()
+        let home_dir = dirs::home_dir()
             .expect("Impossible to get your home dir!");
         let home_dir_str = home_dir.to_str()
             .expect("Fail on get your home string!");
