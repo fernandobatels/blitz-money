@@ -144,3 +144,15 @@ Removing transaction:
 ```shell
 bmoney transactions rm [id]
 ```
+
+Importing OFX file:
+
+```shell
+bmoney transactions ofx [account id] /path/to/file.ofx
+```
+
+Merge transaction B into A:
+
+```shell
+bmoney transactions merge [trasaction id A] [transaction id B]
+```
