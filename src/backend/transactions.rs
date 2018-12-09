@@ -20,15 +20,21 @@ pub struct Transaction {
    pub contact: Option<Contact>,
    pub description: String,
    pub value: f32,
+   // When this transaction will be paid
    pub deadline: Option<NaiveDate>,
    pub paid_in: Option<NaiveDate>,
    pub created_at: Option<DateTime<Local>>,
-   pub updated_at: Option<DateTime<Local>>, // Last update
+   // Last update
+   pub updated_at: Option<DateTime<Local>>,
+   // When this transaction is a transfer. If has value on this field the field 'contact' will be empty
    pub transfer: Option<Box<Transaction>>,
    pub tags: Vec<Tag>,
    pub observations: String,
+   // OFX references
    pub ofx_memo: String,
-   pub ofx_fitid: String
+   pub ofx_fitid: String,
+    // Link to the principal transaction, when this is merged into her
+   pub merged_in: String
 }
 
 impl Default for Transaction {
@@ -49,7 +55,8 @@ impl Default for Transaction {
             tags: vec!(),
             observations: "".to_string(),
             ofx_memo: "".to_string(),
-            ofx_fitid: "".to_string()
+            ofx_fitid: "".to_string(),
+            merged_in: "".to_string()
         }
     }
 }
@@ -165,6 +172,10 @@ impl Model for Transaction {
             mov.ofx_fitid = row["ofx_fitid"].to_string();
         }
 
+        if !row["merged_in"].is_empty() {
+            mov.merged_in = row["merged_in"].to_string();
+        }
+
         mov
     }
 
@@ -214,6 +225,10 @@ impl Model for Transaction {
             ob["ofx_fitid"] = self.ofx_fitid.into();
         }
 
+        if !self.merged_in.is_empty() {
+            ob["merged_in"] = self.merged_in.into();
+        }
+
         (self.uuid.clone(), self.uuid.is_empty(), ob)
     }
 }
@@ -242,7 +257,7 @@ impl Transaction {
         let mut list: Vec<Transaction> = vec![];
 
         while let Ok(line) = data.next::<Transaction>() {
-            if account.uuid == line.account.clone().unwrap().uuid {
+            if account.uuid == line.account.clone().unwrap().uuid && line.merged_in.is_empty() {
                 list.push(line);
             }
         }
@@ -267,7 +282,7 @@ impl Transaction {
         totals.push(Total { label: "Current balance".to_string(), value: account.open_balance });
 
         while let Ok(line) = data.next::<Transaction>() {
-            if account.uuid == line.account.clone().unwrap().uuid {
+            if account.uuid == line.account.clone().unwrap().uuid && line.merged_in.is_empty() {
 
                 // Period filter
                 if line.deadline.unwrap() < from || line.deadline.unwrap() > to {

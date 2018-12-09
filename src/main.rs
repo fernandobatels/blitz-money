@@ -95,8 +95,10 @@ fn main() {
             Transactions::rm(storage, args[3..].to_vec());
         } else if args[2] == "ofx" {
             Transactions::ofx(storage, args[3..].to_vec());
+        } else if args[2] == "merge" {
+            Transactions::merge(storage, args[3..].to_vec());
         } else {
-            println!("How to use: bmoney transactions [list|add|update|rm|ofx]");
+            println!("How to use: bmoney transactions [list|add|update|rm|ofx|merge]");
         }
     } else if args[1] == "tags" {
         if args[2] == "list" {

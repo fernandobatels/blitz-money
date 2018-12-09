@@ -529,4 +529,26 @@ impl Transactions {
             println!("How to use: bmoney transactions ofx [account id] /path/to/file.ofx");
         }
     }
+
+    // Interface to merge two transactions
+    pub fn merge(mut storage: Storage, params: Vec<String>) {
+
+        if params.len() == 2 {
+            // Shell mode
+
+            let principal = Transaction::get_transaction(&mut storage, params[0].to_string())
+                .expect("Principal transaction not found");
+
+            let mut secondary = Transaction::get_transaction(&mut storage, params[1].to_string())
+                .expect("Secondary transaction not found");
+
+            secondary.merged_in = principal.uuid;
+
+            Transaction::store_transaction(&mut storage, secondary);
+
+        } else {
+            // Help mode
+            println!("How to use: bmoney transactions merge [principal transaction id] [secondary transaction id]");
+        }
+    }
 }
