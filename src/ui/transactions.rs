@@ -58,13 +58,14 @@ impl Transactions {
             let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, uuid, tag);
 
             let mut balance = totals[4].value.clone(); // Previous Balance
+            let mut expected_balance = totals[4].value.clone(); // Previous Balance
 
             let mut table = Output::new_table();
 
             if show_all {
-                table.set_titles(row![b->"Deadline", b->"Description", b->"Type", b->"Value", b->"Paid in", b->"Balance", b->"Contact", b->"Tags", b->"#id", b->"By ofx", b->"Observations", b->"Created at", b->"Last update"]);
+                table.set_titles(row![b->"Deadline", b->"Description", b->"Type", b->"Value", b->"Expected balance", b->"Paid in", b->"Balance", b->"Contact", b->"Tags", b->"#id", b->"By ofx", b->"Observations", b->"Created at", b->"Last update"]);
             } else {
-                table.set_titles(row![b->"Deadline", b->"Description", b->"Type", b->"Value", b->"Paid in", b->"Balance", b->"Contact", b->"Tags", b->"#id", b->"By ofx"]);
+                table.set_titles(row![b->"Deadline", b->"Description", b->"Type", b->"Value", b->"Expected balance", b->"Paid in", b->"Balance", b->"Contact", b->"Tags", b->"#id", b->"By ofx"]);
             }
 
             for transaction in transactions {
@@ -80,14 +81,16 @@ impl Transactions {
                 }
 
                 if transaction.paid_in.is_some() {
-                    balance = balance + transaction.value;
+                    balance += transaction.value;
                 }
+                expected_balance += transaction.value;
 
                 let mut row = table.add_row(row![
                     transaction.deadline.unwrap(),
                     transaction.description,
                     "C",
                     Fg->transaction.value_formmated(),
+                    Fg->account.format_value(expected_balance),
                     transaction.paid_in_formmated(),
                     Fg->account.format_value(balance),
                     "",
@@ -103,8 +106,13 @@ impl Transactions {
                         .expect("Unable to set value on transaction");
                 }
 
+                if expected_balance < 0.0 {
+                    row.set_cell(cell!(Fr->account.format_value(expected_balance)), 4)
+                        .expect("Unable to set expected balance on transaction");
+                }
+
                 if balance < 0.0 {
-                    row.set_cell(cell!(Fr->account.format_value(balance)), 5)
+                    row.set_cell(cell!(Fr->account.format_value(balance)), 6)
                         .expect("Unable to set balance on transaction");
                 }
 
@@ -113,10 +121,10 @@ impl Transactions {
                         .expect("Unable to set T on transaction");
 
                     // In transcations we show the destination account on place of contact
-                    row.set_cell(cell!(transaction.transfer.unwrap().account.clone().unwrap().name + &"(account)".to_owned()), 6)
+                    row.set_cell(cell!(transaction.transfer.unwrap().account.clone().unwrap().name + &"(account)".to_owned()), 7)
                         .expect("Unable to set account of other transfer on transaction");
                 } else {
-                    row.set_cell(cell!(transaction.contact.clone().unwrap().name), 6)
+                    row.set_cell(cell!(transaction.contact.clone().unwrap().name), 7)
                         .expect("Unable to set contact on transaction");
                 }
 
@@ -133,9 +141,9 @@ impl Transactions {
 
 
             if show_all {
-                table.add_row(row!["", "", "", "", "", "", "", "", "", "", "", "", ""]);
+                table.add_row(row!["", "", "", "", "", "", "", "", "", "", "", "", "", ""]);
             } else {
-                table.add_row(row!["", "", "", "", "", "", "", "", "", ""]);
+                table.add_row(row!["", "", "", "", "", "", "", "", "", "", ""]);
             }
 
             for total in totals {
@@ -145,6 +153,7 @@ impl Transactions {
                     b->total.label,
                     "",
                     Fg->account.format_value(total.value),
+                    "",
                     "",
                     "",
                     "",
