@@ -57,12 +57,14 @@ impl Transactions {
 
             let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, uuid, tag);
 
+            let mut balance = totals[4].value.clone(); // Previous Balance
+
             let mut table = Output::new_table();
 
             if show_all {
-                table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id", b->"By ofx", b->"Observations", b->"Created at", b->"Last update"]);
+                table.set_titles(row![b->"Deadline", b->"Description", b->"Type", b->"Value", b->"Paid in", b->"Balance", b->"Contact", b->"Tags", b->"#id", b->"By ofx", b->"Observations", b->"Created at", b->"Last update"]);
             } else {
-                table.set_titles(row![b->"Description", b->"Type", b->"Value", b->"Deadline", b->"Paid in", b->"Contact", b->"Tags", b->"#id", b->"By ofx"]);
+                table.set_titles(row![b->"Deadline", b->"Description", b->"Type", b->"Value", b->"Paid in", b->"Balance", b->"Contact", b->"Tags", b->"#id", b->"By ofx"]);
             }
 
             for transaction in transactions {
@@ -77,12 +79,17 @@ impl Transactions {
                     by_ofx = "Yes".to_string();
                 }
 
+                if transaction.paid_in.is_some() {
+                    balance = balance + transaction.value;
+                }
+
                 let mut row = table.add_row(row![
+                    transaction.deadline.unwrap(),
                     transaction.description,
                     "C",
                     Fg->transaction.value_formmated(),
-                    transaction.deadline.unwrap(),
                     transaction.paid_in_formmated(),
+                    Fg->account.format_value(balance),
                     "",
                     tags.join(", "),
                     transaction.uuid,
@@ -90,21 +97,26 @@ impl Transactions {
                 ]);
 
                 if transaction.value < 0.0 {
-                    row.set_cell(cell!("D"), 1)
+                    row.set_cell(cell!("D"), 2)
                         .expect("Unable to set D on transaction");
-                    row.set_cell(cell!(Fr->transaction.value_formmated()), 2)
+                    row.set_cell(cell!(Fr->transaction.value_formmated()), 3)
                         .expect("Unable to set value on transaction");
                 }
 
+                if balance < 0.0 {
+                    row.set_cell(cell!(Fr->account.format_value(balance)), 5)
+                        .expect("Unable to set balance on transaction");
+                }
+
                 if transaction.transfer.is_some() {
-                    row.set_cell(cell!("T"), 1)
+                    row.set_cell(cell!("T"), 2)
                         .expect("Unable to set T on transaction");
 
                     // In transcations we show the destination account on place of contact
-                    row.set_cell(cell!(transaction.transfer.unwrap().account.clone().unwrap().name + &"(account)".to_owned()), 5)
+                    row.set_cell(cell!(transaction.transfer.unwrap().account.clone().unwrap().name + &"(account)".to_owned()), 6)
                         .expect("Unable to set account of other transfer on transaction");
                 } else {
-                    row.set_cell(cell!(transaction.contact.clone().unwrap().name), 5)
+                    row.set_cell(cell!(transaction.contact.clone().unwrap().name), 6)
                         .expect("Unable to set contact on transaction");
                 }
 
@@ -121,17 +133,19 @@ impl Transactions {
 
 
             if show_all {
-                table.add_row(row!["", "", "", "", "", "", "", "", "", "", ""]);
+                table.add_row(row!["", "", "", "", "", "", "", "", "", "", "", "", ""]);
             } else {
-                table.add_row(row!["", "", "", "", "", "", "", ""]);
+                table.add_row(row!["", "", "", "", "", "", "", "", "", ""]);
             }
 
             for total in totals {
 
                 let mut row = table.add_row(row![
+                    "",
                     b->total.label,
                     "",
                     Fg->account.format_value(total.value),
+                    "",
                     "",
                     "",
                     "",
@@ -140,7 +154,7 @@ impl Transactions {
                 ]);
 
                 if total.value < 0.0 {
-                    row.set_cell(cell!(Fr->account.format_value(total.value)), 2)
+                    row.set_cell(cell!(Fr->account.format_value(total.value)), 3)
                         .expect("Unable to set value on total");
                 }
 
