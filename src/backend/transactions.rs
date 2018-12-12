@@ -34,7 +34,10 @@ pub struct Transaction {
    pub ofx_memo: String,
    pub ofx_fitid: String,
     // Link to the principal transaction, when this is merged into her
-   pub merged_in: String
+   pub merged_in: String,
+    // Link to the previuos transaction on payment installments, for example, or
+    // used in transactions created repeatedly
+   pub previous_repetition: String
 }
 
 impl Default for Transaction {
@@ -56,7 +59,8 @@ impl Default for Transaction {
             observations: "".to_string(),
             ofx_memo: "".to_string(),
             ofx_fitid: "".to_string(),
-            merged_in: "".to_string()
+            merged_in: "".to_string(),
+            previous_repetition: "".to_string()
         }
     }
 }
@@ -176,6 +180,10 @@ impl Model for Transaction {
             mov.merged_in = row["merged_in"].to_string();
         }
 
+        if !row["previous_repetition"].is_empty() {
+            mov.previous_repetition = row["previous_repetition"].to_string();
+        }
+
         mov
     }
 
@@ -227,6 +235,10 @@ impl Model for Transaction {
 
         if !self.merged_in.is_empty() {
             ob["merged_in"] = self.merged_in.into();
+        }
+
+        if !self.previous_repetition.is_empty() {
+            ob["previous_repetition"] = self.previous_repetition.into();
         }
 
         (self.uuid.clone(), self.uuid.is_empty(), ob)
@@ -367,7 +379,7 @@ impl Transaction {
     }
 
     // Save updates, or create new, transaction on storage
-    pub fn store_transaction(storage: &mut Storage, transaction: Transaction) {
+    pub fn store_transaction(storage: &mut Storage, transaction: Transaction) -> String {
 
         if transaction.transfer.is_some() {
             panic!("You must be use the Transaction#store_transfer for transfers!");
@@ -377,11 +389,11 @@ impl Transaction {
 
         let mut data = storage.get_section_data("transactions".to_string());
 
-        data.save(transaction);
+        data.save(transaction)
     }
 
     // Save updates, or create new, transfers transactions
-    pub fn store_transfer(storage: &mut Storage, transaction: &mut Transaction, other: &mut Transaction) {
+    pub fn store_transfer(storage: &mut Storage, transaction: &mut Transaction, other: &mut Transaction) -> String {
 
         storage.start_section("transactions".to_string());
 
@@ -438,6 +450,8 @@ impl Transaction {
             data.save(transaction.to_owned());
             data.save(other.to_owned());
         }
+
+        transaction.uuid.clone()
     }
 
     // Remvoe transaction of storage
@@ -460,7 +474,7 @@ impl Transaction {
     }
 
     // Store the trasaction with validation if is a tranfer
-    pub fn make_transaction_or_transfer(storage: &mut Storage, transaction: &mut Transaction, contact_uuid: String) {
+    pub fn make_transaction_or_transfer(storage: &mut Storage, transaction: &mut Transaction, contact_uuid: String) -> String {
 
         //Transfer
         if transaction.contact.is_none() {
@@ -478,9 +492,9 @@ impl Transaction {
             // with this
             transfer.transfer = Some(Box::new(transaction.clone()));
 
-            Transaction::store_transfer(storage, transaction, &mut transfer);
+            return Transaction::store_transfer(storage, transaction, &mut transfer);
         } else {
-            Transaction::store_transaction(storage, transaction.to_owned());
+            return Transaction::store_transaction(storage, transaction.to_owned());
         }
     }
 }

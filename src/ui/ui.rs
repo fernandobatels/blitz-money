@@ -120,6 +120,26 @@ impl Input {
         money
     }
 
+    // Read a integer value from stdin
+    pub fn read_int(label: String, is_required: bool, current_value: Option<i32>) -> i32 {
+
+        let mut current:Option<String> = None;
+        if current_value.is_some() {
+            current = Some(current_value.unwrap().to_string());
+        }
+
+        let value = Input::read(label, is_required, current);
+
+        if value.is_empty() && !is_required {
+            return 0;
+        }
+
+        let int = value.parse::<i32>()
+            .expect("Couldn't parse the string to integer");
+
+        int
+    }
+
     // Read a option from stdin
     pub fn read_option(mut label: String, is_required: bool, current_value: Option<String>, mut options: Vec<(String, String)>) -> String {
 
@@ -251,6 +271,21 @@ impl Input {
             .expect("Couldn't parse the string to money. The format is 00000.00");
 
         money
+    }
+
+    // Parse the param to a integer value
+    pub fn param_int(label: String, is_required: bool, params: Vec<String>, position: usize) -> i32 {
+
+        let value = Input::param(label, is_required, params, position);
+
+        if value.is_empty() && !is_required {
+            return 0;
+        }
+
+        let int = value.parse::<i32>()
+            .expect("Couldn't parse the string to integer");
+
+        int
     }
 
     // Return if the param exists on params vec

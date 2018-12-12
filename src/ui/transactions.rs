@@ -6,7 +6,7 @@
 /// Copyright 2018 Luis Fernando Batels <luisfbatels@gmail.com>
 ///
 
-use chrono::{Local, prelude::Datelike, NaiveDate};
+use chrono::{Local, prelude::Datelike, NaiveDate, Duration};
 
 use backend::transactions::Transaction;
 use backend::transactions::StatusFilter;
@@ -194,6 +194,8 @@ impl Transactions {
             let paid_in: Option<NaiveDate>;
             let mut tags: Vec<Tag> = vec!();
             let observations: String;
+            let mut repetitions;
+            let mut repetitions_interval;
 
             if params.len() >= 5 {
                 // Shell mode
@@ -222,6 +224,10 @@ impl Transactions {
                 }
 
                 observations = Input::param("Observations".to_string(), false, params.clone(), 7);
+
+                repetitions = Input::param_int("Repetitions".to_string(), false, params.clone(), 8);
+                repetitions_interval = Input::param_int("Interval in days of repetitions".to_string(), false, params.clone(), 9);
+
             } else {
                 // Interactive mode
 
@@ -265,6 +271,9 @@ impl Transactions {
                     .collect();
 
                 observations = Input::read("Observations".to_string(), false, None);
+
+                repetitions = Input::read_int("Repetitions of this transaction".to_string(), false, None);
+                repetitions_interval = Input::read_int("Interval in days between the repetitions".to_string(), false, None);
             }
 
             let contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
@@ -272,7 +281,7 @@ impl Transactions {
                 Err(_)  => None
             };
 
-            let mut mov = Transaction {
+            let mut mov_template = Transaction {
                 description: description,
                 value: value,
                 account: account,
@@ -284,11 +293,38 @@ impl Transactions {
                 ..Default::default()
             };
 
-            Transaction::make_transaction_or_transfer(&mut storage, &mut mov, contact_uuid);
+            if repetitions <= 0 {
+                repetitions = 1;
+            }
+
+            if repetitions_interval <= 0 {
+                repetitions_interval = 1;
+            }
+
+            for rep in 0..repetitions {
+
+                let mut mov = mov_template.clone();
+
+                if repetitions > 1 {
+                    mov.description.push_str(&format!(" [{}/{}]", rep + 1, repetitions));
+                }
+
+                let tr_uuid = Transaction::make_transaction_or_transfer(&mut storage, &mut mov, contact_uuid.clone());
+
+                let duration = Duration::days(repetitions_interval.into());
+
+                mov_template.deadline = Some(mov_template.deadline.unwrap() + duration);
+
+                if mov_template.paid_in.is_some() {
+                    mov_template.paid_in = Some(mov_template.paid_in.unwrap() + duration);
+                }
+
+                mov_template.previous_repetition = tr_uuid;
+            }
 
         } else {
             // Help mode
-            println!("How to use: bmoney transactions add [description] [value] [account id] [contact id] [deadline] [paid in] [tags] [observations]");
+            println!("How to use: bmoney transactions add [description] [value] [account id] [contact id] [deadline] [paid in] [tags] [observations] [repetitions] [interval in days of repetitions]");
             println!("Or with interactive mode: bmoney transactions add -i")
         }
     }
