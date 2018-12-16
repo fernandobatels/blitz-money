@@ -273,7 +273,12 @@ impl Transactions {
                 observations = Input::read("Observations".to_string(), false, None);
 
                 repetitions = Input::read_int("Repetitions of this transaction".to_string(), false, None);
-                repetitions_interval = Input::read_int("Interval in days between the repetitions".to_string(), false, None);
+                if repetitions > 0 {
+                    // We only ask the interval if the user input the repetitions...
+                    repetitions_interval = Input::read_int("Interval in days between the repetitions".to_string(), false, None);
+                } else {
+                    repetitions_interval = 0;
+                }
             }
 
             let contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
@@ -501,12 +506,18 @@ impl Transactions {
     }
 
     // Interface to import ofx files
-    pub fn ofx(mut storage: Storage, params: Vec<String>) {
+    pub fn ofx(mut storage: Storage, mut params: Vec<String>) {
 
-        if params.len() == 2 {
+        if params.len() >= 2 {
             // Shell mode
 
             let account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
+
+            let mut auto_skip = false;
+            if Input::extract_param(&mut params, "--auto-skip".to_string()) {
+                auto_skip = true;
+            }
+
 
             let mut contacts: Vec<(String, String)> = vec![];
             for co in Contact::get_contacts(&mut storage) {
@@ -538,6 +549,11 @@ impl Transactions {
                 if !tr.uuid.is_empty() {
                     println!("Already added in this account with description \"{}\" in {}", tr.description, tr.created_at.unwrap());
                     question = "Update(y) or skip(n)?".to_string();
+
+                    if auto_skip {
+                        println!("Auto skiping...");
+                        continue;
+                    }
                 }
 
                 if Input::read(question, false, None) != "y" {
