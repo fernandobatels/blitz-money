@@ -9,7 +9,7 @@
 use prettytable::*;
 use csv::*;
 use std::io;
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Local};
 
 pub struct Output {
 }
@@ -90,6 +90,10 @@ impl Input {
             return None;
         }
 
+        if value == "today".to_string() {
+            return Some(Local::now().date().naive_local());
+        }
+
         let date = NaiveDate::parse_from_str(&value, "%Y-%m-%d")
             .expect("Couldn't parse the string to date. The format is YYYY-MM-DD");
 
@@ -140,8 +144,63 @@ impl Input {
         int
     }
 
+    // Build the str for display options
+    fn str_for_display_options(options: Vec<(String, String)>, filter: Option<String>) -> String {
+
+        let mut label = String::new();
+        let mut cols = 0;
+
+        for (i, (_, option)) in options.iter().enumerate() {
+
+            if filter.clone().is_none() || option.to_lowercase().contains(filter.clone().unwrap().as_str()) {
+
+                if cols == 3 {
+                    label.push_str("\n");
+                    cols = 0;
+                }
+                label.push_str(&format!("[{:2}] => {:50}", i, option));
+                cols += 1;
+            }
+        }
+        label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'");
+
+        label
+    }
+
+    // Display the options and provide a interface to search him
+    fn select_options(mut label: String, is_required: bool, current_value: Option<String>, mut options: Vec<(String, String)>) -> String {
+
+        options.sort_by( | (_, a), (_, b) | a.cmp(&b) );
+
+        label.push_str(", options avaliable:\n");
+        label.push_str(&Input::str_for_display_options(options.clone(), None));
+
+        let mut value: String;
+
+        loop {
+
+            value = Input::read(label.clone(), is_required, current_value.clone());
+
+            // Searching a option
+            if value.starts_with("\\") {
+
+                label = String::from("Options found:\n");
+
+                value = value.replace("\\", "").trim().to_lowercase().to_string();
+
+                label.push_str(&Input::str_for_display_options(options.clone(), Some(value)));
+
+            } else {
+                break;
+            }
+
+        }
+
+        value
+    }
+
     // Read a option from stdin
-    pub fn read_option(mut label: String, is_required: bool, current_value: Option<String>, mut options: Vec<(String, String)>) -> String {
+    pub fn read_option(label: String, is_required: bool, current_value: Option<String>, options: Vec<(String, String)>) -> String {
 
         if options.len() == 0 {
             if !is_required {
@@ -151,40 +210,7 @@ impl Input {
             panic!("No options avaliable for {}", label);
         }
 
-        options.sort_by( | (_, a), (_, b) | a.cmp(&b) );
-
-        label.push_str(", options avaliable:");
-        for (i, (_, option)) in options.iter().enumerate() {
-            label.push_str(&format!("\n[{}] => {}", i, option));
-        }
-        label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'");
-
-        let mut value = String::new();
-        let mut first = true;
-
-        loop {
-
-            // Searching a option
-            if value.starts_with("\\") {
-
-                label = String::from("Options found:");
-
-                value = value.replace("\\", "").trim().to_lowercase().to_string();
-
-                for (i, (_, option)) in options.iter().enumerate() {
-                    if option.to_lowercase().contains(value.as_str()) {
-                        label.push_str(&format!("\n[{}] => {}", i, option));
-                    }
-                }
-                label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'");
-
-            } else if !first {
-                break;
-            }
-
-            value = Input::read(label.clone(), is_required, current_value.clone());
-            first = false;
-        }
+        let value = Input::select_options(label, is_required, current_value, options.clone());
 
         // We can't run panic because the user can input a uuid
         let selected = match value.parse::<usize>() {
@@ -202,7 +228,7 @@ impl Input {
     }
 
     // Read options from stdin
-    pub fn read_options(mut label: String, is_required: bool, current_value: Vec<String>, mut options: Vec<(String, String)>) -> Vec<String> {
+    pub fn read_options(label: String, is_required: bool, current_value: Vec<String>, options: Vec<(String, String)>) -> Vec<String> {
 
         if options.len() == 0 {
             if !is_required {
@@ -212,40 +238,7 @@ impl Input {
             panic!("No options avaliable for {}", label);
         }
 
-        options.sort_by( | (_, a), (_, b) | a.cmp(&b) );
-
-        label.push_str(", options avaliable:");
-        for (i, (_, option)) in options.iter().enumerate() {
-            label.push_str(&format!("\n[{}] => {}", i, option));
-        }
-        label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'. Use ',' to select more");
-
-        let mut values = String::new();
-        let mut first = true;
-
-        loop {
-
-            // Searching a option
-            if values.starts_with("\\") {
-
-                label = String::from("Options found:");
-
-                values = values.replace("\\", "").trim().to_lowercase().to_string();
-
-                for (i, (_, option)) in options.iter().enumerate() {
-                    if option.to_lowercase().contains(values.as_str()) {
-                        label.push_str(&format!("\n[{}] => {}", i, option));
-                    }
-                }
-                label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'. Use ',' to select more");
-
-            } else if !first {
-                break;
-            }
-
-            values = Input::read(label.clone(), is_required, None);
-            first = false;
-        }
+        let values = Input::select_options(label, is_required, None, options.clone());
 
         if values.is_empty() {
             return current_value;
