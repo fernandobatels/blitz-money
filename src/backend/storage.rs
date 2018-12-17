@@ -153,6 +153,22 @@ impl<'a> Data<'a> {
         }
     }
 
+    // Return a small version of the uuid
+    pub fn uuid_to_id(uuid: String) -> String {
+
+        let mut id = String::new();
+
+        id.push_str(&uuid.get(0..1).unwrap().to_string());
+        id.push_str(&uuid.get(10..11).unwrap().to_string());
+        id.push_str(&uuid.get(15..16).unwrap().to_string());
+        id.push_str("-");
+        id.push_str(&uuid.get(20..21).unwrap().to_string());
+        id.push_str(&uuid.get(25..26).unwrap().to_string());
+        id.push_str(&uuid.get(35..36).unwrap().to_string());
+
+        id
+    }
+
     // Find the next row by the id. After this method is necessary
     // use the next() method for get the row
     pub fn find_by_id(&mut self, uuid: String) -> bool {
@@ -177,9 +193,17 @@ impl<'a> Data<'a> {
                 return false;
             }
 
-            if line.trim().chars().take(36).collect::<String>() == uuid {
-                self.last_position = i.clone() - 1;
-                return true;
+            // Is a small id
+            if uuid.chars().count() == 7 && !line.starts_with("::") {
+                if Data::uuid_to_id(line.trim().to_string()) == uuid {
+                    self.last_position = i.clone() - 1;
+                    return true;
+                }
+            } else {
+                if line.trim().chars().take(36).collect::<String>() == uuid {
+                    self.last_position = i.clone() - 1;
+                    return true;
+                }
             }
 
             first = false;

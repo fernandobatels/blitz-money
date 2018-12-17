@@ -46,6 +46,11 @@ impl Model for Contact {
 
 impl Contact {
 
+    // Short version of the uuid
+    pub fn id(self) -> String {
+        Data::uuid_to_id(self.uuid)
+    }
+
     // Return a list with all contacts
     pub fn get_contacts(storage: &mut Storage) -> Vec<Contact> {
 

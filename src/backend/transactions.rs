@@ -260,6 +260,11 @@ impl Transaction {
         self.paid_in.unwrap().to_string().clone()
     }
 
+    // Short version of the uuid
+    pub fn id(self) -> String {
+        Data::uuid_to_id(self.uuid)
+    }
+
     // Return a list with all transactions of account
     pub fn get_transactions_simple(storage: &mut Storage, account: Account) -> Vec<Transaction> {
 

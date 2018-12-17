@@ -33,7 +33,7 @@ impl Accounts {
                 account.bank,
                 Fg->account.open_balance_formmated(),
                 account.open_balance_date.unwrap(),
-                account.uuid
+                account.clone().id()
             ]);
 
             if account.open_balance < 0.0 {

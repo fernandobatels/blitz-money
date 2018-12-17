@@ -95,7 +95,7 @@ impl Transactions {
                     Fg->account.format_value(balance),
                     "",
                     tags.join(", "),
-                    transaction.uuid,
+                    transaction.clone().id(),
                     by_ofx
                 ]);
 

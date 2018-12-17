@@ -39,6 +39,11 @@ impl Model for Tag {
 
 impl Tag {
 
+    // Short version of the uuid
+    pub fn id(self) -> String {
+        Data::uuid_to_id(self.uuid)
+    }
+
     // Return a list with all tags
     pub fn get_tags(storage: &mut Storage) -> Vec<Tag> {
 

@@ -27,7 +27,7 @@ impl Contacts {
             table.add_row(row![
                 contact.name,
                 contact.city_location,
-                contact.uuid
+                contact.clone().id()
             ]);
         }
 

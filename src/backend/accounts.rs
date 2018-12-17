@@ -80,6 +80,11 @@ impl Account {
         format!("{} {:.2}", self.currency, value)
     }
 
+    // Short version of the uuid
+    pub fn id(self) -> String {
+        Data::uuid_to_id(self.uuid)
+    }
+
     // Return a list with all accounts
     pub fn get_accounts(storage: &mut Storage) -> Vec<Account> {
 

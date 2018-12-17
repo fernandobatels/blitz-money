@@ -26,7 +26,7 @@ impl Tags {
 
             table.add_row(row![
                 tag.name,
-                tag.uuid
+                tag.clone().id()
             ]);
         }
 
@@ -117,6 +117,7 @@ mod tests {
     use uuid::Uuid;
     use std::process::Command;
     use assert_cmd::prelude::*;
+    use backend::storage::Data;
 
     fn populate() -> (String, Vec<String>) {
 
@@ -164,10 +165,10 @@ mod tests {
 
         let mut stdout = String::from("\"Name\",\"#id\"\n");
 
-        stdout.push_str(&format!("\"tag 4\",\"{}\"\n", uuids[3]));
-        stdout.push_str(&format!("\"tag 3\",\"{}\"\n", uuids[2]));
-        stdout.push_str(&format!("\"tag 2\",\"{}\"\n", uuids[1]));
-        stdout.push_str(&format!("\"tag 1\",\"{}\"\n", uuids[0]));
+        stdout.push_str(&format!("\"tag 4\",\"{}\"\n", Data::uuid_to_id(uuids[3].clone())));
+        stdout.push_str(&format!("\"tag 3\",\"{}\"\n", Data::uuid_to_id(uuids[2].clone())));
+        stdout.push_str(&format!("\"tag 2\",\"{}\"\n", Data::uuid_to_id(uuids[1].clone())));
+        stdout.push_str(&format!("\"tag 1\",\"{}\"\n", Data::uuid_to_id(uuids[0].clone())));
 
         main.assert()
             .success()
