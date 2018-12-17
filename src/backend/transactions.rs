@@ -269,7 +269,7 @@ impl Transaction {
         let mut list: Vec<Transaction> = vec![];
 
         while let Ok(line) = data.next::<Transaction>() {
-            if account.uuid == line.account.clone().unwrap().uuid && line.merged_in.is_empty() {
+            if account.uuid == line.account.clone().unwrap().uuid {
                 list.push(line);
             }
         }
@@ -277,7 +277,7 @@ impl Transaction {
         list
     }
 
-    // Return a list with all transactions of account and totals, with more filters
+    // Return a list with all transactions, except the mergeds, of account and totals, with more filters
     pub fn get_transactions(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, filter_status: StatusFilter, filter_uuid: Option<String>, filter_tag: Option<String>) -> (Vec<Transaction>, Vec<Total>) {
 
         storage.start_section("transactions".to_string());

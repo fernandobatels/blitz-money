@@ -157,9 +157,34 @@ impl Input {
         for (i, (_, option)) in options.iter().enumerate() {
             label.push_str(&format!("\n[{}] => {}", i, option));
         }
-        label.push_str("\nSelect one or input the full uuid");
+        label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'");
 
-        let value = Input::read(label, is_required, current_value);
+        let mut value = String::new();
+        let mut first = true;
+
+        loop {
+
+            // Searching a option
+            if value.starts_with("\\") {
+
+                label = String::from("Options found:");
+
+                value = value.replace("\\", "").trim().to_lowercase().to_string();
+
+                for (i, (_, option)) in options.iter().enumerate() {
+                    if option.to_lowercase().contains(value.as_str()) {
+                        label.push_str(&format!("\n[{}] => {}", i, option));
+                    }
+                }
+                label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'");
+
+            } else if !first {
+                break;
+            }
+
+            value = Input::read(label.clone(), is_required, current_value.clone());
+            first = false;
+        }
 
         // We can't run panic because the user can input a uuid
         let selected = match value.parse::<usize>() {
@@ -193,9 +218,34 @@ impl Input {
         for (i, (_, option)) in options.iter().enumerate() {
             label.push_str(&format!("\n[{}] => {}", i, option));
         }
-        label.push_str("\nSelect one or input the full uuid(use ',' to select more)");
+        label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'. Use ',' to select more");
 
-        let values = Input::read(label, is_required, None);
+        let mut values = String::new();
+        let mut first = true;
+
+        loop {
+
+            // Searching a option
+            if values.starts_with("\\") {
+
+                label = String::from("Options found:");
+
+                values = values.replace("\\", "").trim().to_lowercase().to_string();
+
+                for (i, (_, option)) in options.iter().enumerate() {
+                    if option.to_lowercase().contains(values.as_str()) {
+                        label.push_str(&format!("\n[{}] => {}", i, option));
+                    }
+                }
+                label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'. Use ',' to select more");
+
+            } else if !first {
+                break;
+            }
+
+            values = Input::read(label.clone(), is_required, None);
+            first = false;
+        }
 
         if values.is_empty() {
             return current_value;
