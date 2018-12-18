@@ -169,6 +169,19 @@ impl<'a> Data<'a> {
         id
     }
 
+    // Check if the line is the register by uuid
+    fn line_check_uuid(mut line: String, uuid: String) -> bool {
+
+        line = line.trim().to_string();
+
+        // Is a small id
+        if uuid.chars().count() == 7 && line.chars().count() >= 36 && !line.starts_with("::") {
+            return Data::uuid_to_id(line.to_string()) == uuid;
+        }
+
+        line.chars().take(36).collect::<String>() == uuid
+    }
+
     // Find the next row by the id. After this method is necessary
     // use the next() method for get the row
     pub fn find_by_id(&mut self, uuid: String) -> bool {
@@ -193,17 +206,9 @@ impl<'a> Data<'a> {
                 return false;
             }
 
-            // Is a small id
-            if uuid.chars().count() == 7 && !line.starts_with("::") {
-                if Data::uuid_to_id(line.trim().to_string()) == uuid {
-                    self.last_position = i.clone() - 1;
-                    return true;
-                }
-            } else {
-                if line.trim().chars().take(36).collect::<String>() == uuid {
-                    self.last_position = i.clone() - 1;
-                    return true;
-                }
+            if Data::line_check_uuid(line.clone(), uuid.clone()) {
+                self.last_position = i.clone() - 1;
+                return true;
             }
 
             first = false;
@@ -263,7 +268,7 @@ impl<'a> Data<'a> {
         } else {
             // Register to update
             for (i, line) in self.storage.lines.clone().iter().enumerate() {
-                if line.chars().take(36).collect::<String>() == uuid {
+                if Data::line_check_uuid(line.clone(), uuid.clone()) {
                     self.storage.lines[i] = format!("{} {}", uuid, data.dump());
                     break;
                 }
@@ -281,7 +286,7 @@ impl<'a> Data<'a> {
         self.storage.reopen_file();
 
         for (i, line) in self.storage.lines.clone().iter().enumerate() {
-            if line.chars().take(36).collect::<String>() == uuid {
+            if Data::line_check_uuid(line.clone(), uuid.clone()) {
                 self.storage.lines.remove(i);
                 break;
             }
