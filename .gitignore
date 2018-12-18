@@ -1,6 +1,7 @@
 build
 target
 *.swp
+*.swo
 src/qtbindingsimplementation.rs
 /target/
 Cargo.lock
