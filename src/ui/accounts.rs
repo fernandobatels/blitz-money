@@ -13,6 +13,7 @@ use chrono::{Local, prelude::Datelike, NaiveDate};
 use prettytable::{Row, Cell, Attr, color};
 use backend::transactions::Transaction;
 use backend::transactions::StatusFilter;
+use i18n::*;
 
 pub struct Accounts {}
 
@@ -24,7 +25,7 @@ impl Accounts {
         let accounts = Account::get_accounts(&mut storage);
         let mut table = Output::new_table();
 
-        table.set_titles(row![b->"Name", b->"Bank", b->"Opening Balance", b->"Opening Balance Date", b->"#id"]);
+        table.set_titles(row![b->I18n::text("accounts_name"), b->I18n::text("accounts_bank"), b->I18n::text("accounts_ob"), b->I18n::text("accounts_obd"), b->"#id"]);
 
         for account in accounts {
 
@@ -38,7 +39,7 @@ impl Accounts {
 
             if account.open_balance < 0.0 {
                 row.set_cell(cell!(Fr->account.open_balance_formmated()), 2)
-                    .expect("Unable to set opening balance of account");
+                    .expect(&I18n::text("accounts_unable_to_set_opening_balance_of_account"));
             }
         }
 
@@ -72,7 +73,7 @@ impl Accounts {
                 // adding the news columns
 
                 cols = vec![
-                    Cell::new("Account")
+                    Cell::new(&I18n::text("accounts_name"))
                         .with_style(Attr::Bold)
                 ];
 
@@ -116,11 +117,11 @@ impl Accounts {
         if params.len() == 5 {
             // Shell mode
 
-            let name = Input::param("Account name".to_string(), true, params.clone(), 0);
-            let bank = Input::param("Bank".to_string(), true, params.clone(), 1);
-            let obd = Input::param_date("Opening Balance Date".to_string(), true, params.clone(), 2);
-            let currency = Input::param("Currency(eg: $, R$...)".to_string(), true, params.clone(), 4);
-            let ob = Input::param_money("Opening Balance".to_string(), true, params.clone(), 3);
+            let name = Input::param(I18n::text("accounts_name"), true, params.clone(), 0);
+            let bank = Input::param(I18n::text("accounts_bank"), true, params.clone(), 1);
+            let obd = Input::param_date(I18n::text("accounts_obd"), true, params.clone(), 2);
+            let currency = Input::param(I18n::text("accounts_currency"), true, params.clone(), 4);
+            let ob = Input::param_money(I18n::text("accounts_ob"), true, params.clone(), 3);
 
             Account::store_account(&mut storage, Account {
                 uuid: "".to_string(),
@@ -133,11 +134,11 @@ impl Accounts {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            let name = Input::read("Account name".to_string(), true, None);
-            let bank = Input::read("Bank".to_string(), true, None);
-            let obd = Input::read_date("Opening Balance Date".to_string(), true, None);
-            let currency = Input::read("Currency(eg: $, R$...)".to_string(), true, None);
-            let ob = Input::read_money("Opening Balance".to_string(), true, None, currency.clone());
+            let name = Input::read(I18n::text("accounts_name"), true, None);
+            let bank = Input::read(I18n::text("accounts_bank"), true, None);
+            let obd = Input::read_date(I18n::text("accounts_obd"), true, None);
+            let currency = Input::read(I18n::text("accounts_currency"), true, None);
+            let ob = Input::read_money(I18n::text("accounts_ob"), true, None, currency.clone());
 
             Account::store_account(&mut storage, Account {
                 uuid: "".to_string(),
@@ -149,8 +150,7 @@ impl Accounts {
             });
         } else {
             // Help mode
-            println!("How to use: bmoney accounts add [name] [bank] [opening balance date] [opening balance] [currency]");
-            println!("Or with interactive mode: bmoney accounts add -i")
+            println!("{}", I18n::text("accounts_how_to_use_add"));
         }
     }
 
@@ -161,20 +161,20 @@ impl Accounts {
             // Shell mode
 
             let mut account = Account::get_account(&mut storage, params[0].trim().to_string())
-                .expect("Account not found");
+                .expect(&I18n::text("accounts_not_found"));
 
             if params[1] == "name" {
-                account.name = Input::param("Account name".to_string(), true, params.clone(), 2);
+                account.name = Input::param(I18n::text("accounts_name"), true, params.clone(), 2);
             } else if params[1] == "bank" {
-                account.bank = Input::param("Bank".to_string(), true, params.clone(), 2);
+                account.bank = Input::param(I18n::text("accounts_bank"), true, params.clone(), 2);
             } else if params[1] == "obd" {
-                account.open_balance_date = Input::param_date("Opening Balance Date".to_string(), true, params.clone(), 2);
+                account.open_balance_date = Input::param_date(I18n::text("accounts_obd"), true, params.clone(), 2);
             } else if params[1] == "ob" {
-                account.open_balance = Input::param_money("Opening Balance".to_string(), true, params.clone(), 2);
+                account.open_balance = Input::param_money(I18n::text("accounts_ob"), true, params.clone(), 2);
             } else if params[1] == "currency" {
-                account.currency = Input::param("Currency(eg: $, R$...)".to_string(), true, params.clone(), 2);
+                account.currency = Input::param(I18n::text("accounts_currency"), true, params.clone(), 2);
             } else {
-                panic!("Field not found!");
+                panic!(I18n::text("field_not_found"));
             }
 
             Account::store_account(&mut storage, account);
@@ -182,23 +182,22 @@ impl Accounts {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            let id = Input::read("Account id".to_string(), true, None);
+            let id = Input::read("#id".to_string(), true, None);
 
             let mut account = Account::get_account(&mut storage, id)
-                .expect("Account not found");
+                .expect(&I18n::text("accounts_not_found"));
 
-            account.name = Input::read("Account name".to_string(), true, Some(account.name));
-            account.bank = Input::read("Bank".to_string(), true, Some(account.bank));
-            account.open_balance_date = Input::read_date("Opening Balance Date".to_string(), true, account.open_balance_date);
-            account.currency = Input::read("Currency(eg: $, R$...)".to_string(), true, Some(account.currency));
-            account.open_balance = Input::read_money("Opening Balance".to_string(), true, Some(account.open_balance), account.currency.clone());
+            account.name = Input::read(I18n::text("accounts_name"), true, Some(account.name));
+            account.bank = Input::read(I18n::text("accounts_bank"), true, Some(account.bank));
+            account.open_balance_date = Input::read_date(I18n::text("accounts_obd"), true, account.open_balance_date);
+            account.currency = Input::read(I18n::text("accounts_currency"), true, Some(account.currency));
+            account.open_balance = Input::read_money(I18n::text("accounts_ob"), true, Some(account.open_balance), account.currency.clone());
 
             Account::store_account(&mut storage, account);
 
         } else {
             // Help mode
-            println!("How to use: bmoney accounts update [id] [name|bank|obd|ob|curency] [value]");
-            println!("Or with interactive mode: bmoney accounts update -i")
+            println!("{}", I18n::text("accounts_how_to_use_update"));
         }
     }
 
@@ -212,7 +211,7 @@ impl Accounts {
 
         } else {
             // Help mode
-            println!("How to use: bmoney accounts rm [id]");
+            println!("{}", I18n::text("accounts_how_to_use_rm"));
         }
     }
 }

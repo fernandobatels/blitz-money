@@ -10,6 +10,7 @@ use backend::storage::*;
 use backend::accounts::*;
 use backend::contacts::*;
 use backend::tags::*;
+use i18n::*;
 use chrono::{Local, DateTime, NaiveDate};
 use json::JsonValue;
 
@@ -291,13 +292,13 @@ impl Transaction {
         let mut list: Vec<Transaction> = vec![];
         let mut totals: Vec<Total> = vec![];
 
-        totals.push(Total { label: "Expenses(payable)".to_string(), value: 0.0 });
-        totals.push(Total { label: "Incomes(to receive)".to_string(), value: 0.0 });
-        totals.push(Total { label: "Expenses".to_string(), value: 0.0 });
-        totals.push(Total { label: "Incomes".to_string(), value: 0.0 });
-        totals.push(Total { label: "Previous balance".to_string(), value: account.open_balance });
-        totals.push(Total { label: "Current balance".to_string(), value: account.open_balance });
-        totals.push(Total { label: "Expected balance".to_string(), value: account.open_balance });
+        totals.push(Total { label: I18n::text("transactions_expenses_payable"), value: 0.0 });
+        totals.push(Total { label: I18n::text("transactions_incomes_toreceive"), value: 0.0 });
+        totals.push(Total { label: I18n::text("transactions_expenses"), value: 0.0 });
+        totals.push(Total { label: I18n::text("transactions_incomes"), value: 0.0 });
+        totals.push(Total { label: I18n::text("transactions_previous_balance"), value: account.open_balance });
+        totals.push(Total { label: I18n::text("transactions_current_balance"), value: account.open_balance });
+        totals.push(Total { label: I18n::text("transactions_expeected_balance"), value: account.open_balance });
 
         while let Ok(line) = data.next::<Transaction>() {
             if account.uuid == line.account.clone().unwrap().uuid && line.merged_in.is_empty() {
@@ -511,6 +512,8 @@ mod tests {
     use uuid::Uuid;
 
     fn populate() -> String {
+
+        I18n::config("en_US".to_string());
 
         let path = "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string();
 

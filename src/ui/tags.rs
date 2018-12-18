@@ -9,6 +9,7 @@
 use backend::tags::Tag;
 use backend::storage::Storage;
 use ui::ui::*;
+use i18n::*;
 
 pub struct Tags {}
 
@@ -20,7 +21,7 @@ impl Tags {
         let tags = Tag::get_tags(&mut storage);
         let mut table = Output::new_table();
 
-        table.set_titles(row![b->"Name", b->"#id"]);
+        table.set_titles(row![b->I18n::text("tags_name"), b->"#id"]);
 
         for tag in tags {
 
@@ -39,7 +40,7 @@ impl Tags {
         if params.len() == 1 && params[0] != "-i"{
             // Shell mode
 
-            let name = Input::param("Tag name".to_string(), true, params.clone(), 0);
+            let name = Input::param(I18n::text("tags_name").to_string(), true, params.clone(), 0);
 
             Tag::store_tag(&mut storage, Tag {
                 uuid: "".to_string(),
@@ -48,7 +49,7 @@ impl Tags {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            let name = Input::read("Tag name".to_string(), true, None);
+            let name = Input::read(I18n::text("tags_name"), true, None);
 
             Tag::store_tag(&mut storage, Tag {
                 uuid: "".to_string(),
@@ -56,8 +57,7 @@ impl Tags {
             });
         } else {
             // Help mode
-            println!("How to use: bmoney tags add [name]");
-            println!("Or with interactive mode: bmoney tags add -i")
+            println!("{}", I18n::text("tags_how_to_use_add"));
         }
     }
 
@@ -68,12 +68,12 @@ impl Tags {
             // Shell mode
 
             let mut tag = Tag::get_tag(&mut storage, params[0].trim().to_string())
-                .expect("Tag not found");
+                .expect(&I18n::text("tags_not_found"));
 
             if params[1] == "name" {
-                tag.name = Input::param("Tag name".to_string(), true, params.clone(), 2);
+                tag.name = Input::param(I18n::text("tags_name"), true, params.clone(), 2);
             } else {
-                panic!("Field not found!");
+                panic!(I18n::text("field_not_found"));
             }
 
             Tag::store_tag(&mut storage, tag);
@@ -81,18 +81,17 @@ impl Tags {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            let id = Input::read("Tag id".to_string(), true, None);
+            let id = Input::read("#id".to_string(), true, None);
 
             let mut tag = Tag::get_tag(&mut storage, id)
-                .expect("Tag not found");
+                .expect(&I18n::text("tags_not_found"));
 
-            tag.name = Input::read("Tag name".to_string(), true, Some(tag.name));
+            tag.name = Input::read(I18n::text("tags_name"), true, Some(tag.name));
 
             Tag::store_tag(&mut storage, tag);
         } else {
             // Help mode
-            println!("How to use: bmoney tags update [id] [name] [value]");
-            println!("Or with interactive mode: bmoney tags update -i")
+            println!("{}", I18n::text("tags_how_to_use_update"));
         }
     }
 
@@ -105,7 +104,7 @@ impl Tags {
             Tag::remove_tag(&mut storage, params[0].trim().to_string());
         } else {
             // Help mode
-            println!("How to use: bmoney tags rm [id]");
+            println!("{}", I18n::text("tags_how_to_use_rm"));
         }
     }
 }
@@ -163,7 +162,7 @@ mod tests {
             .arg("--storage-file=".to_owned() + &path_str)
             .arg("--use-csv");
 
-        let mut stdout = String::from("\"Name\",\"#id\"\n");
+        let mut stdout = String::from("\"Tag name\",\"#id\"\n");
 
         stdout.push_str(&format!("\"tag 4\",\"{}\"\n", Data::uuid_to_id(uuids[3].clone())));
         stdout.push_str(&format!("\"tag 3\",\"{}\"\n", Data::uuid_to_id(uuids[2].clone())));

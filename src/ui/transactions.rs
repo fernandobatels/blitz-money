@@ -16,6 +16,7 @@ use backend::tags::Tag;
 use backend::storage::Storage;
 use backend::ofx::Ofx;
 use ui::ui::*;
+use i18n::*;
 
 pub struct Transactions {}
 
@@ -63,9 +64,9 @@ impl Transactions {
             let mut table = Output::new_table();
 
             if show_all {
-                table.set_titles(row![b->"Deadline", b->"Description", b->"Type", b->"Value", b->"Expected balance", b->"Paid in", b->"Balance", b->"Contact", b->"Tags", b->"#id", b->"By ofx", b->"Observations", b->"Created at", b->"Last update"]);
+                table.set_titles(row![b->I18n::text("transactions_deadline"), b->I18n::text("transactions_description"), b->I18n::text("transactions_type"), b->I18n::text("transactions_value"), b->I18n::text("transactions_excpected_balance"), b->I18n::text("transactions_paidin"), b->I18n::text("transactions_balance"), b->I18n::text("transactions_contact"), b->I18n::text("transactions_tags"), b->"#id", b->I18n::text("transactions_byofx"), b->I18n::text("transactions_observation"), b->I18n::text("transactions_createdat"), b->I18n::text("transactions_lastupdate")]);
             } else {
-                table.set_titles(row![b->"Deadline", b->"Description", b->"Type", b->"Value", b->"Expected balance", b->"Paid in", b->"Balance", b->"Contact", b->"Tags", b->"#id", b->"By ofx"]);
+                table.set_titles(row![b->I18n::text("transactions_deadline"), b->I18n::text("transactions_description"), b->I18n::text("transactions_type"), b->I18n::text("transactions_value"), b->I18n::text("transactions_excpected_balance"), b->I18n::text("transactions_paidin"), b->I18n::text("transactions_balance"), b->I18n::text("transactions_contact"), b->I18n::text("transactions_tags"), b->"#id", b->I18n::text("transactions_byofx")]);
             }
 
             for transaction in transactions {
@@ -101,31 +102,31 @@ impl Transactions {
 
                 if transaction.value < 0.0 {
                     row.set_cell(cell!("D"), 2)
-                        .expect("Unable to set D on transaction");
+                        .expect(&I18n::text("transactions_unable_to_set_d"));
                     row.set_cell(cell!(Fr->transaction.value_formmated()), 3)
-                        .expect("Unable to set value on transaction");
+                        .expect(&I18n::text("transactions_unable_to_set_value"));
                 }
 
                 if expected_balance < 0.0 {
                     row.set_cell(cell!(Fr->account.format_value(expected_balance)), 4)
-                        .expect("Unable to set expected balance on transaction");
+                        .expect(&I18n::text("transactions_unable_to_set_expected_balance"));
                 }
 
                 if balance < 0.0 {
                     row.set_cell(cell!(Fr->account.format_value(balance)), 6)
-                        .expect("Unable to set balance on transaction");
+                        .expect(&I18n::text("transactions_unable_to_set_balance"));
                 }
 
                 if transaction.transfer.is_some() {
                     row.set_cell(cell!("T"), 2)
-                        .expect("Unable to set T on transaction");
+                        .expect(&I18n::text("transactions_unable_to_set_t"));
 
                     // In transcations we show the destination account on place of contact
-                    row.set_cell(cell!(transaction.transfer.unwrap().account.clone().unwrap().name + &"(account)".to_owned()), 7)
-                        .expect("Unable to set account of other transfer on transaction");
+                    row.set_cell(cell!(transaction.transfer.unwrap().account.clone().unwrap().name + &I18n::text("transactions_caccount")), 7)
+                        .expect(&I18n::text("transactions_unable_to_set_account"));
                 } else {
                     row.set_cell(cell!(transaction.contact.clone().unwrap().name), 7)
-                        .expect("Unable to set contact on transaction");
+                        .expect(&I18n::text("transactions_unable_to_set_contact"));
                 }
 
                 if show_all {
@@ -164,7 +165,7 @@ impl Transactions {
 
                 if total.value < 0.0 {
                     row.set_cell(cell!(Fr->account.format_value(total.value)), 3)
-                        .expect("Unable to set value on total");
+                        .expect(&I18n::text("transactions_unable_to_set_total"));
                 }
 
                 if show_all {
@@ -177,7 +178,7 @@ impl Transactions {
             Output::print_table(table, is_csv);
         } else {
             // Help mode
-            println!("How to use: bmoney transactions list [account id] [from] [to]");
+            println!("{}", I18n::text("transactions_how_to_use_list"));
         }
     }
 
@@ -200,48 +201,48 @@ impl Transactions {
             if params.len() >= 5 {
                 // Shell mode
 
-                description = Input::param("Transaction description".to_string(), true, params.clone(), 0);
+                description = Input::param(I18n::text("transactions_description"), true, params.clone(), 0);
 
-                let account_uuid = Input::param("Account".to_string(), true, params.clone(), 2);
+                let account_uuid = Input::param(I18n::text("transactions_account"), true, params.clone(), 2);
                 account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
-                value = Input::param_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, params.clone(), 1);
+                value = Input::param_money(I18n::text("transactions_lvalue"), true, params.clone(), 1);
 
-                contact_uuid = Input::param("Contact".to_string(), true, params.clone(), 3);
+                contact_uuid = Input::param(I18n::text("transactions_contact"), true, params.clone(), 3);
 
-                deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 4);
-                paid_in = Input::param_date("Paid in".to_string(), false, params.clone(), 5);
+                deadline = Input::param_date(I18n::text("transactions_deadline"), true, params.clone(), 4);
+                paid_in = Input::param_date(I18n::text("transactions_paidin"), false, params.clone(), 5);
 
-                let tags_str = Input::param("Tags".to_string(), false, params.clone(), 6);
+                let tags_str = Input::param(I18n::text("transactions_tags"), false, params.clone(), 6);
 
                 if !tags_str.is_empty() {
                     for tag in tags_str.split(",") {
                         tags.push(
                             Tag::get_tag(&mut storage, tag.to_string())
-                                .expect("Tag not found")
+                                .expect(&I18n::text("tags_not_found"))
                         );
                     }
                 }
 
-                observations = Input::param("Observations".to_string(), false, params.clone(), 7);
+                observations = Input::param(I18n::text("transactions_observations"), false, params.clone(), 7);
 
-                repetitions = Input::param_int("Repetitions".to_string(), false, params.clone(), 8);
-                repetitions_interval = Input::param_int("Interval in days of repetitions".to_string(), false, params.clone(), 9);
+                repetitions = Input::param_int(I18n::text("transactions_repetitions"), false, params.clone(), 8);
+                repetitions_interval = Input::param_int(I18n::text("transactions_repetitions_interval"), false, params.clone(), 9);
 
             } else {
                 // Interactive mode
 
-                description = Input::read("Transaction description".to_string(), true, None);
+                description = Input::read(I18n::text("transactions_description"), true, None);
 
                 let mut accounts: Vec<(String, String)> = vec![];
                 for ac in Account::get_accounts(&mut storage) {
                     accounts.push((ac.uuid, ac.name));
                 }
 
-                let account_uuid = Input::read_option("Account".to_string(), true, None, accounts.clone());
+                let account_uuid = Input::read_option(I18n::text("transactions_account"), true, None, accounts.clone());
                 account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
-                value = Input::read_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, None, account.clone().unwrap().currency);
+                value = Input::read_money(I18n::text("transactions_lvalue"), true, None, account.clone().unwrap().currency);
 
                 let mut contacts: Vec<(String, String)> = vec![];
                 for co in Contact::get_contacts(&mut storage) {
@@ -249,33 +250,33 @@ impl Transactions {
                 }
                 // For transfers
                 for (uuid, name) in accounts {
-                    contacts.push((uuid, name + &"(account)".to_owned()));
+                    contacts.push((uuid, name + &I18n::text("transactions_caccount")));
                 }
 
-                contact_uuid = Input::read_option("Contact or other account(for transfer)".to_string(), true, None, contacts);
+                contact_uuid = Input::read_option(I18n::text("transactions_contact_or_other_account"), true, None, contacts);
 
-                deadline = Input::read_date("Deadline".to_string(), true, None);
-                paid_in = Input::read_date("Paid in".to_string(), false, None);
+                deadline = Input::read_date(I18n::text("transactions_deadline"), true, None);
+                paid_in = Input::read_date(I18n::text("transactions_paidin"), false, None);
 
                 let mut tags_ops: Vec<(String, String)> = vec![];
                 for tag in Tag::get_tags(&mut storage) {
                     tags_ops.push((tag.uuid, tag.name));
                 }
 
-                tags = Input::read_options("Tags".to_string(), false, vec![], tags_ops)
+                tags = Input::read_options(I18n::text("transactions_tags"), false, vec![], tags_ops)
                     .iter()
                     .map(
                         |tag| Tag::get_tag(&mut storage, tag.to_string())
-                                    .expect("Tag not found")
+                                    .expect(&I18n::text("tags_not_found"))
                     )
                     .collect();
 
-                observations = Input::read("Observations".to_string(), false, None);
+                observations = Input::read(I18n::text("transactions_observations"), false, None);
 
-                repetitions = Input::read_int("Repetitions of this transaction".to_string(), false, None);
+                repetitions = Input::read_int(I18n::text("transactions_repetitions"), false, None);
                 if repetitions > 0 {
                     // We only ask the interval if the user input the repetitions...
-                    repetitions_interval = Input::read_int("Interval in days between the repetitions".to_string(), false, None);
+                    repetitions_interval = Input::read_int(I18n::text("transactions_repetitions_interval"), false, None);
                 } else {
                     repetitions_interval = 0;
                 }
@@ -329,8 +330,7 @@ impl Transactions {
 
         } else {
             // Help mode
-            println!("How to use: bmoney transactions add [description] [value] [account id] [contact id] [deadline] [paid in] [tags] [observations] [repetitions] [interval in days of repetitions]");
-            println!("Or with interactive mode: bmoney transactions add -i")
+            println!("{}", I18n::text("transactions_how_to_use_add"));
         }
     }
 
@@ -341,7 +341,7 @@ impl Transactions {
             // Pay mode
 
             let mut transaction = Transaction::get_transaction(&mut storage, params[0].trim().to_string())
-                .expect("Transaction not found");
+                .expect(&I18n::text("transactions_not_found"));
 
             // Update the paid date
             if params.len() >= 3 && params[2] != "today" {
@@ -349,8 +349,7 @@ impl Transactions {
                     transaction.paid_in = None;
                 } else {
                     // Is a date value
-                    transaction.paid_in = Some(NaiveDate::parse_from_str(&params[2], "%Y-%m-%d")
-                        .expect("Couldn't parse the string to date. The format is YYYY-MM-DD"));
+                    transaction.paid_in = Input::param_date(I18n::text("transactions_paidin"), false, params.clone(), 2);
                 }
             } else {
                 // No date, no empty or the 'today' value we set this transaction as paid today
@@ -359,8 +358,7 @@ impl Transactions {
 
             // Update the value
             if params.len() >= 4 {
-                transaction.value = params[3].parse::<f32>()
-                    .expect("Couldn't parse the string to money. The format is 00000.00");
+                transaction.value = Input::param_money(I18n::text("transactions_lvalue"), true, params.clone(), 3);
             }
 
             if transaction.transfer.is_some() {
@@ -373,42 +371,42 @@ impl Transactions {
             // Shell mode
 
             let mut transaction = Transaction::get_transaction(&mut storage, params[0].trim().to_string())
-                .expect("Transaction not found");
+                .expect(&I18n::text("transactions_not_found"));
 
             if params[1] == "description" {
-                transaction.description = Input::param("Transaction description".to_string(), true, params.clone(), 2);
+                transaction.description = Input::param(I18n::text("transactions_description"), true, params.clone(), 2);
             } else if params[1] == "value" {
-                transaction.value = Input::param_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, params.clone(), 2);
+                transaction.value = Input::param_money(I18n::text("transactions_lvalue"), true, params.clone(), 2);
             } else if params[1] == "account" {
-                let account_uuid = Input::param("Account".to_string(), true, params.clone(), 2);
+                let account_uuid = Input::param(I18n::text("transactions_account"), true, params.clone(), 2);
                 transaction.account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
             } else if params[1] == "contact" {
-                let contact_uuid = Input::param("Contact".to_string(), true, params.clone(), 2);
+                let contact_uuid = Input::param(I18n::text("transactions_contact"), true, params.clone(), 2);
                 if transaction.transfer.is_some() {
                     transaction.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
                 } else {
                     transaction.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
                 }
             } else if params[1] == "deadline" {
-                transaction.deadline = Input::param_date("Deadline".to_string(), true, params.clone(), 2);
+                transaction.deadline = Input::param_date(I18n::text("transactions_deadline"), true, params.clone(), 2);
             } else if params[1] == "paid_in" {
-                transaction.paid_in = Input::param_date("Paid in".to_string(), false, params.clone(), 2);
+                transaction.paid_in = Input::param_date(I18n::text("transactions_paidin"), false, params.clone(), 2);
             } else if params[1] == "tags" {
-                let tags_str = Input::param("Tags".to_string(), false, params.clone(), 2);
+                let tags_str = Input::param(I18n::text("transactions_tags"), false, params.clone(), 2);
                 transaction.tags = vec![];
 
                 if !tags_str.is_empty() {
                     for tag in tags_str.split(",") {
                         transaction.tags.push(
                             Tag::get_tag(&mut storage, tag.to_string())
-                                .expect("Tag not found")
+                                .expect(&I18n::text("tags_not_found"))
                         );
                     }
                 }
             } else if params[1] == "observations" {
-                transaction.observations = Input::param("Observations".to_string(), false, params.clone(), 2);
+                transaction.observations = Input::param(I18n::text("transactions_observations"), false, params.clone(), 2);
             } else {
-                panic!("Field not found!");
+                panic!(I18n::text("field_not_found"));
             }
 
             if transaction.transfer.is_some() {
@@ -420,39 +418,39 @@ impl Transactions {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            let id = Input::read("Transaction id".to_string(), true, None);
+            let id = Input::read("#id".to_string(), true, None);
 
             let mut transaction = Transaction::get_transaction(&mut storage, id)
-                .expect("Transaction not found");
+                .expect(&I18n::text("transactions_not_found"));
 
-            transaction.description = Input::read("Transaction description".to_string(), true, Some(transaction.description));
+            transaction.description = Input::read(I18n::text("transactions_description"), true, Some(transaction.description));
 
             let mut accounts: Vec<(String, String)> = vec![];
             for ac in Account::get_accounts(&mut storage) {
                 accounts.push((ac.uuid, ac.name));
             }
 
-            let account_uuid = Input::read_option("Account".to_string(), true, Some(transaction.account.clone().unwrap().uuid), accounts.clone());
+            let account_uuid = Input::read_option(I18n::text("transactions_account"), true, Some(transaction.account.clone().unwrap().uuid), accounts.clone());
             transaction.account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
 
-            transaction.value = Input::read_money("Value(>= 0 for credit and < 0 for debit)".to_string(), true, Some(transaction.value), transaction.account.clone().unwrap().currency);
+            transaction.value = Input::read_money(I18n::text("transactions_lvalue"), true, Some(transaction.value), transaction.account.clone().unwrap().currency);
 
             let contact_uuid: String;
 
             if transaction.transfer.is_some() {
-                contact_uuid = Input::read_option("Destination account".to_string(), true, Some(transaction.transfer.clone().unwrap().uuid), accounts);
+                contact_uuid = Input::read_option(I18n::text("transactions_destination_account"),true, Some(transaction.transfer.clone().unwrap().uuid), accounts);
             } else {
                 let mut contacts: Vec<(String, String)> = vec![];
                 for co in Contact::get_contacts(&mut storage) {
                     contacts.push((co.uuid, co.name));
                 }
 
-                contact_uuid = Input::read_option("Contact".to_string(), true, Some(transaction.contact.clone().unwrap().uuid), contacts);
+                contact_uuid = Input::read_option(I18n::text("transactions_contact"), true, Some(transaction.contact.clone().unwrap().uuid), contacts);
                 transaction.contact = Some(Contact::get_contact(&mut storage, contact_uuid.clone()).unwrap());
             }
 
-            transaction.deadline = Input::read_date("Deadline".to_string(), true, transaction.deadline);
-            transaction.paid_in = Input::read_date("Paid in".to_string(), false, transaction.paid_in);
+            transaction.deadline = Input::read_date(I18n::text("transactions_deadline"), true, transaction.deadline);
+            transaction.paid_in = Input::read_date(I18n::text("transactions_paidin"), false, transaction.paid_in);
 
             let mut tags_ops: Vec<(String, String)> = vec![];
             for tag in Tag::get_tags(&mut storage) {
@@ -464,15 +462,15 @@ impl Transactions {
                 .map(|tag| tag.uuid.clone())
                 .collect();
 
-            transaction.tags = Input::read_options("Tags".to_string(), false, current_tags, tags_ops)
+            transaction.tags = Input::read_options(I18n::text("transactions_tags"), false, current_tags, tags_ops)
                 .iter()
                 .map(
                     |tag| Tag::get_tag(&mut storage, tag.to_string())
-                                .expect("Tag not found")
+                                .expect(&I18n::text("tags_not_found"))
                 )
                 .collect();
 
-            transaction.observations = Input::read("Observations".to_string(), false, Some(transaction.observations));
+            transaction.observations = Input::read(I18n::text("transactions_observations"), false, Some(transaction.observations));
 
             if transaction.transfer.is_some() {
                 let mut transfer = transaction.clone().transfer.unwrap();
@@ -486,9 +484,7 @@ impl Transactions {
             }
         } else {
             // Help mode
-            println!("How to use: bmoney transactions update [id] [description|value|account|contact|deadline|paid|tags|observations] [value]");
-            println!("Or with interactive mode: bmoney transactions update -i");
-            println!("Or for pay mode: bmoney transactions update [id] pay [\"\"|YYYY-MM-DD|unpaid|today](optional) [new_value](optional)");
+            println!("{}", I18n::text("transactions_how_to_use_update"));
         }
     }
 
@@ -501,7 +497,7 @@ impl Transactions {
             Transaction::remove_transaction(&mut storage, params[0].trim().to_string());
         } else {
             // Help mode
-            println!("How to use: bmoney transactions rm [id]");
+            println!("{}", I18n::text("transactions_how_to_use_rm"));
         }
     }
 
@@ -525,7 +521,7 @@ impl Transactions {
             }
             // For transfers
             for account in Account::get_accounts(&mut storage) {
-                contacts.push((account.uuid, account.name + &"(account)".to_owned()));
+                contacts.push((account.uuid, account.name + &I18n::text("transactions_caccount")));
             }
 
             let mut tags_ops: Vec<(String, String)> = vec![];
@@ -534,24 +530,24 @@ impl Transactions {
             }
 
             let ofx = Ofx::new(params[1].to_owned())
-                .expect("Couldn't open the ofx file");
+                .expect(&I18n::text("transactions_couldnt_open_ofx"));
 
             let transactions = ofx.get_transactions();
 
             for (i, ofx_tr) in transactions.iter().enumerate() {
-                println!("Transaction {}/{}", i + 1, transactions.len());
-                println!("{} on {}, memo: {}", account.format_value(ofx_tr.amount), ofx_tr.posted_at.unwrap(), ofx_tr.memo);
+                println!("{} {}/{}", I18n::text("transactions_ofx_index"), i + 1, transactions.len());
+                println!("{} {} {}, memo: {}", I18n::text("transactions_ofx_on"), account.format_value(ofx_tr.amount), ofx_tr.posted_at.unwrap(), ofx_tr.memo);
 
                 let mut tr = ofx_tr.clone().build_transaction(&mut storage, account.clone());
 
-                let mut question = "Add(y) or skip(n)?".to_string();
+                let mut question = I18n::text("transactions_ofx_add_skip");
 
                 if !tr.uuid.is_empty() {
-                    println!("Already added in this account with description \"{}\" in {}", tr.description, tr.created_at.unwrap());
-                    question = "Update(y) or skip(n)?".to_string();
+                    println!("{} \"{}\" in {}", I18n::text("transactions_ofx_already"), tr.description, tr.created_at.unwrap());
+                    question = I18n::text("transactions_ofx_update_skip");
 
                     if auto_skip {
-                        println!("Auto skiping...");
+                        println!("{}", I18n::text("transactions_ofx_auto_skip"));
                         continue;
                     }
                 }
@@ -562,7 +558,7 @@ impl Transactions {
 
                 tr.account = Some(account.clone());
 
-                tr.description = Input::read("Transaction description".to_string(), true, Some(tr.description));
+                tr.description = Input::read(I18n::text("transactions_description"), true, Some(tr.description));
 
 
                 let mut current_contact: Option<String> = None;
@@ -571,7 +567,7 @@ impl Transactions {
                     current_contact = Some(contact.uuid);
                 }
 
-                let contact_uuid = Input::read_option("Contact or other account(for transfer)".to_string(), true, current_contact, contacts.clone());
+                let contact_uuid = Input::read_option(I18n::text("transactions_contact_or_other_account"), true, current_contact, contacts.clone());
 
                 tr.contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
                     Ok(con) => Some(con),
@@ -584,16 +580,16 @@ impl Transactions {
                     .map(|tag| tag.uuid.clone())
                     .collect();
 
-                tr.tags = Input::read_options("Tags".to_string(), false, current_tags, tags_ops.clone())
+                tr.tags = Input::read_options(I18n::text("transactions_tags"), false, current_tags, tags_ops.clone())
                     .iter()
                     .map(
                         |tag| Tag::get_tag(&mut storage, tag.to_string())
-                                    .expect("Tag not found")
+                                    .expect(&I18n::text("tags_not_found"))
                     )
                     .collect();
 
 
-                tr.observations = Input::read("Observations".to_string(), false, Some(tr.observations));
+                tr.observations = Input::read(I18n::text("transactions_observations"), false, Some(tr.observations));
 
                 Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
 
@@ -601,7 +597,7 @@ impl Transactions {
 
         } else {
             // Help mode
-            println!("How to use: bmoney transactions ofx [account id] /path/to/file.ofx");
+            println!("{}", I18n::text("transactions_how_to_use_ofx"));
         }
     }
 
@@ -627,7 +623,7 @@ impl Transactions {
 
         } else {
             // Help mode
-            println!("How to use: bmoney transactions merge [principal transaction id] [secondary transaction id]");
+            println!("{}", I18n::text("transactions_how_to_use_merge"));
         }
     }
 }

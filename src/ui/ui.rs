@@ -10,6 +10,7 @@ use prettytable::*;
 use csv::*;
 use std::io;
 use chrono::{NaiveDate, Local};
+use i18n::*;
 
 pub struct Output {
 }
@@ -37,7 +38,7 @@ impl Output {
                 .from_writer(io::stdout());
 
             table.to_csv_writer(wtr)
-                .expect("Couldn't generate the csv");
+                .expect(&I18n::text("couldnt_generate_the_csv"));
         } else {
             table.printstd();
         }
@@ -51,14 +52,14 @@ impl Input {
     pub fn read(label: String, is_required: bool, current_value: Option<String>) -> String {
 
         if current_value.is_some() {
-            println!("{}: {}(keep blank for skip)", label, current_value.clone().unwrap());
+            println!("{}: {}({})", label, current_value.clone().unwrap(), I18n::text("keep_blank_for_skip"));
         } else {
             println!("{}:", label);
         }
 
         let mut value = String::new();
         io::stdin().read_line(&mut value)
-            .expect("Failed to read value");
+            .expect(&I18n::text("failed_to_read_value"));
 
         value = value.trim().to_string();
 
@@ -68,7 +69,7 @@ impl Input {
         }
 
         if is_required && value.is_empty() {
-            panic!("This field is required");
+            panic!(I18n::text("this_field_is_required"));
         }
 
         value
@@ -77,7 +78,7 @@ impl Input {
     // Read a date value from stdin
     pub fn read_date(mut label: String, is_required: bool, current_value: Option<NaiveDate>) -> Option<NaiveDate> {
 
-        label.push_str("(format YYYY-MM-DD)");
+        label.push_str(&format!("({})", I18n::text("format_date")));
 
         let mut current:Option<String> = None;
         if current_value.is_some() {
@@ -95,7 +96,7 @@ impl Input {
         }
 
         let date = NaiveDate::parse_from_str(&value, "%Y-%m-%d")
-            .expect("Couldn't parse the string to date. The format is YYYY-MM-DD");
+            .expect(&I18n::text("couldnt_parse_the_string_to_date"));
 
         Some(date)
     }
@@ -119,7 +120,7 @@ impl Input {
         }
 
         let money = value.parse::<f32>()
-            .expect("Couldn't parse the string to money. The format is 00000.00");
+            .expect(&I18n::text("couldnt_parse_the_string_to_money"));
 
         money
     }
@@ -139,7 +140,7 @@ impl Input {
         }
 
         let int = value.parse::<i32>()
-            .expect("Couldn't parse the string to integer");
+            .expect(&I18n::text("couldnt_parse_the_string_to_integer"));
 
         int
     }
@@ -162,7 +163,7 @@ impl Input {
                 cols += 1;
             }
         }
-        label.push_str("\nSelect one, input the full uuid or search typing starting with '\\'");
+        label.push_str(&I18n::text("select_one_input_the_full_uuid_or_search"));
 
         label
     }
@@ -172,7 +173,7 @@ impl Input {
 
         options.sort_by( | (_, a), (_, b) | a.cmp(&b) );
 
-        label.push_str(", options avaliable:\n");
+        label.push_str(&I18n::text("options_avaliable"));
         label.push_str(&Input::str_for_display_options(options.clone(), None));
 
         let mut value: String;
@@ -184,7 +185,7 @@ impl Input {
             // Searching a option
             if value.starts_with("\\") {
 
-                label = String::from("Options found:\n");
+                label = I18n::text("options_found");
 
                 value = value.replace("\\", "").trim().to_lowercase().to_string();
 
@@ -207,7 +208,7 @@ impl Input {
                 return "".to_string();
             }
 
-            panic!("No options avaliable for {}", label);
+            panic!("{} {}", I18n::text("no_options_avaliable_for"), label);
         }
 
         let value = Input::select_options(label, is_required, current_value, options.clone());
@@ -235,7 +236,7 @@ impl Input {
                 return vec!();
             }
 
-            panic!("No options avaliable for {}", label);
+            panic!("{} {}", I18n::text("no_options_avaliable_for"), label);
         }
 
         let values = Input::select_options(label, is_required, None, options.clone());
@@ -271,7 +272,7 @@ impl Input {
 
         if params.len() <= position {
             if is_required {
-                panic!("The [{}] is required", label);
+                panic!("{} {}", I18n::text("the__is_required"), label);
             } else {
                 return "".to_string();
             }
@@ -280,7 +281,7 @@ impl Input {
         let value = params[position].trim().to_string();
 
         if is_required && value.is_empty() {
-            panic!("The [{}] is required", label);
+            panic!("{} {}", I18n::text("the__is_required"), label);
         }
 
         value
@@ -296,7 +297,7 @@ impl Input {
         }
 
         let date = NaiveDate::parse_from_str(&value, "%Y-%m-%d")
-            .expect("Couldn't parse the string to date. The format is YYYY-MM-DD");
+            .expect(&I18n::text("couldnt_parse_the_string_to_date"));
 
         Some(date)
     }
@@ -311,7 +312,7 @@ impl Input {
         }
 
         let money = value.parse::<f32>()
-            .expect("Couldn't parse the string to money. The format is 00000.00");
+            .expect(&I18n::text("couldnt_parse_the_string_to_money"));
 
         money
     }
@@ -326,7 +327,7 @@ impl Input {
         }
 
         let int = value.parse::<i32>()
-            .expect("Couldn't parse the string to integer");
+            .expect(&I18n::text("couldnt_parse_the_string_to_integer"));
 
         int
     }

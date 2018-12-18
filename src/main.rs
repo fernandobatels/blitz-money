@@ -16,19 +16,33 @@ extern crate csv;
 extern crate assert_cmd;
 extern crate xmltree;
 extern crate dirs;
+extern crate json_gettext;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static_include;
 
 mod ui;
 mod backend;
+mod i18n;
 
 use std::env;
 use ui::tags::Tags;
 use ui::accounts::Accounts;
 use ui::contacts::Contacts;
 use ui::transactions::Transactions;
-use ui::ui::Input;
+use ui::ui::*;
 use backend::storage::Storage;
+use i18n::*;
 
 fn main() {
+
+    let lang: String = match env::var_os("LANGUAGE") {
+        Some(val) => val.into_string().unwrap(),
+        None => "en_US".to_string()
+    };
+
+    I18n::config(lang);
 
     let mut args: Vec<String> = env::args().collect();
 
@@ -40,9 +54,9 @@ fn main() {
     } else {
         // Default file path
         let home_dir = dirs::home_dir()
-            .expect("Impossible to get your home dir!");
+            .expect(&I18n::text("impossible_to_get_your_home_dir"));
         let home_dir_str = home_dir.to_str()
-            .expect("Fail on get your home string!");
+            .expect(&I18n::text("fail_on_get_your_home_string"));
 
         path_str = home_dir_str.to_owned() + &"/.bmoney.bms".to_string();
     }
@@ -71,7 +85,7 @@ fn main() {
         } else if args[2] == "rm" {
             Accounts::rm(storage, args[3..].to_vec());
         } else {
-            println!("How to use: bmoney accounts [list|add|update|rm]");
+            println!("{}: bmoney accounts [list|add|update|rm]", I18n::text("how_to_use"));
         }
     } else if args[1] == "contacts" {
         if args[2] == "list" {
@@ -83,7 +97,7 @@ fn main() {
         } else if args[2] == "rm" {
             Contacts::rm(storage, args[3..].to_vec());
         } else {
-            println!("How to use: bmoney contacts [list|add|update|rm]");
+            println!("{}: bmoney contacts [list|add|update|rm]", I18n::text("how_to_use"));
         }
     } else if args[1] == "transactions" {
         if args[2] == "list" {
@@ -99,7 +113,7 @@ fn main() {
         } else if args[2] == "merge" {
             Transactions::merge(storage, args[3..].to_vec());
         } else {
-            println!("How to use: bmoney transactions [list|add|update|rm|ofx|merge]");
+            println!("{}: bmoney transactions [list|add|update|rm|ofx|merge]", I18n::text("how_to_use"));
         }
     } else if args[1] == "tags" {
         if args[2] == "list" {
@@ -111,10 +125,10 @@ fn main() {
         } else if args[2] == "rm" {
             Tags::rm(storage, args[3..].to_vec());
         } else {
-            println!("How to use: bmoney tags [list|add|update|rm]");
+            println!("{}: bmoney tags [list|add|update|rm]", I18n::text("how_to_use"));
         }
     } else {
-     println!("How to use: bmoney [module] [action]");
+     println!("{}: bmoney [accounts|contacts|transactions|tags] [action]", I18n::text("how_to_use"));
     }
 
 }

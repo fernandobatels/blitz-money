@@ -9,6 +9,7 @@
 use backend::contacts::Contact;
 use backend::storage::Storage;
 use ui::ui::*;
+use i18n::*;
 
 pub struct Contacts {}
 
@@ -20,7 +21,7 @@ impl Contacts {
         let contacts = Contact::get_contacts(&mut storage);
         let mut table = Output::new_table();
 
-        table.set_titles(row![b->"Name", b->"City", b->"#id"]);
+        table.set_titles(row![b->I18n::text("contacts_name"), b->I18n::text("contacts_city_location"), b->"#id"]);
 
         for contact in contacts {
 
@@ -40,8 +41,8 @@ impl Contacts {
         if params.len() == 2 {
             // Shell mode
 
-            let name = Input::param("Contact name".to_string(), true, params.clone(), 0);
-            let city = Input::param("City".to_string(), true, params.clone(), 1);
+            let name = Input::param(I18n::text("contacts_name"), true, params.clone(), 0);
+            let city = Input::param(I18n::text("contacts_city_location"), true, params.clone(), 1);
 
             Contact::store_contact(&mut storage, Contact {
                 uuid: "".to_string(),
@@ -51,8 +52,8 @@ impl Contacts {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            let name = Input::read("Contact name".to_string(), true, None);
-            let city = Input::read("City".to_string(), true, None);
+            let name = Input::read(I18n::text("contacts_name"), true, None);
+            let city = Input::read(I18n::text("contacts_city_location"), true, None);
 
             Contact::store_contact(&mut storage, Contact {
                 uuid: "".to_string(),
@@ -61,8 +62,7 @@ impl Contacts {
             });
         } else {
             // Help mode
-            println!("How to use: bmoney contacts add [name] [city]");
-            println!("Or with interactive mode: bmoney contacts add -i")
+            println!("{}", I18n::text("contacts_how_to_use_add"));
         }
     }
 
@@ -73,14 +73,14 @@ impl Contacts {
             // Shell mode
 
             let mut contact = Contact::get_contact(&mut storage, params[0].trim().to_string())
-                .expect("Contact not found");
+                .expect(&I18n::text("contacts_not_found"));
 
             if params[1] == "name" {
-                contact.name = Input::param("Contact name".to_string(), true, params.clone(), 2);
+                contact.name = Input::param(I18n::text("contacts_name"), true, params.clone(), 2);
             } else if params[1] == "city" {
-                contact.city_location = Input::param("City".to_string(), true, params.clone(), 2);
+                contact.city_location = Input::param(I18n::text("contacts_city_location"), true, params.clone(), 2);
             } else {
-                panic!("Field not found!");
+                panic!(I18n::text("field_not_found"));
             }
 
             Contact::store_contact(&mut storage, contact);
@@ -88,19 +88,18 @@ impl Contacts {
         } else if params.len() > 0 && params[0] == "-i" {
             // Interactive mode
 
-            let id = Input::read("Contact id".to_string(), true, None);
+            let id = Input::read("#id".to_string(), true, None);
 
             let mut contact = Contact::get_contact(&mut storage, id)
-                .expect("Contact not found");
+                .expect(&I18n::text("contacts_not_found"));
 
-            contact.name = Input::read("Contact name".to_string(), true, Some(contact.name));
-            contact.city_location = Input::read("City".to_string(), true, Some(contact.city_location));
+            contact.name = Input::read(I18n::text("contacts_name"), true, Some(contact.name));
+            contact.city_location = Input::read(I18n::text("contacts_city_location"), true, Some(contact.city_location));
 
             Contact::store_contact(&mut storage, contact);
         } else {
             // Help mode
-            println!("How to use: bmoney contacts update [id] [name|city_location] [value]");
-            println!("Or with interactive mode: bmoney contacts update -i")
+            println!("{}", I18n::text("contacts_how_to_use_update"));
         }
     }
 
@@ -113,7 +112,7 @@ impl Contacts {
             Contact::remove_contact(&mut storage, params[0].trim().to_string());
         } else {
             // Help mode
-            println!("How to use: bmoney contacts rm [id]");
+            println!("{}", I18n::text("contacts_how_to_use_rm"));
         }
     }
 }
