@@ -42,11 +42,14 @@ impl Transactions {
                 status = StatusFilter::PAID;
             }
 
+            let tag_param = Input::extract_named_param(&mut params, "--tag=".to_string());
+            let mut tag: Option<Tag> = None;
 
-            let uuid = Input::extract_named_param(&mut params, "--uuid=".to_string());
-
-
-            let tag = Input::extract_named_param(&mut params, "--tag=".to_string());
+            if tag_param.is_some() {
+                let filter_tag = Tag::get_tag(&mut storage, tag_param.unwrap())
+                                        .expect(&I18n::text("tags_not_found"));
+                tag = Some(filter_tag);
+            }
 
             let mut from = Local::now().with_day(1).unwrap().date().naive_local();
             let mut to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
@@ -56,7 +59,7 @@ impl Transactions {
                 to = NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap();
             }
 
-            let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, uuid, tag);
+            let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, tag);
 
             let mut balance = totals[4].value.clone(); // Previous Balance
             let mut expected_balance = totals[4].value.clone(); // Previous Balance
@@ -608,10 +611,10 @@ impl Transactions {
             // Shell mode
 
             let principal = Transaction::get_transaction(&mut storage, params[0].to_string())
-                .expect("Principal transaction not found");
+                .expect(&I18n::text("transactions_merge_not_found_principal"));
 
             let mut secondary = Transaction::get_transaction(&mut storage, params[1].to_string())
-                .expect("Secondary transaction not found");
+                .expect(&I18n::text("transactions_merge_not_found_secondary"));
 
             secondary.merged_in = principal.uuid;
 

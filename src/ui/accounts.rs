@@ -64,7 +64,7 @@ impl Accounts {
 
         for account in accounts {
 
-            let (_, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, StatusFilter::ALL, None, None);
+            let (_, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, StatusFilter::ALL, None);
 
             let mut cols: Vec<Cell>;
 

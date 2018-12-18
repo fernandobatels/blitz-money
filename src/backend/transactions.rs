@@ -284,7 +284,7 @@ impl Transaction {
     }
 
     // Return a list with all transactions, except the mergeds, of account and totals, with more filters
-    pub fn get_transactions(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, filter_status: StatusFilter, filter_uuid: Option<String>, filter_tag: Option<String>) -> (Vec<Transaction>, Vec<Total>) {
+    pub fn get_transactions(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, filter_status: StatusFilter, filter_tag: Option<Tag>) -> (Vec<Transaction>, Vec<Total>) {
 
         storage.start_section("transactions".to_string());
 
@@ -348,17 +348,12 @@ impl Transaction {
                     filter_status_ok = StatusFilter::FORPAY == filter_status || StatusFilter::ALL == filter_status;
                 }
 
-                let mut filter_uuid_ok = true;
-                if let Some(fuuid) = filter_uuid.clone() {
-                    filter_status_ok = fuuid == line.uuid;
-                }
-
                 let mut filter_tag_ok = true;
                 if let Some(ftag) = filter_tag.clone() {
-                    filter_tag_ok = line.tags.iter().any(|tag| ftag == tag.uuid);
+                    filter_tag_ok = line.tags.iter().any(|tag| ftag.uuid == tag.uuid);
                 }
 
-                if filter_status_ok && filter_uuid_ok && filter_tag_ok {
+                if filter_status_ok && filter_tag_ok {
                     list.push(line);
                 }
 
