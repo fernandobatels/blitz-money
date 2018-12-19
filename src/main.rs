@@ -85,7 +85,7 @@ fn main() {
         } else if args[2] == "rm" {
             Accounts::rm(storage, args[3..].to_vec());
         } else {
-            println!("{}: bmoney accounts [list|add|update|rm]", I18n::text("how_to_use"));
+            println!("{}: bmoney accounts [list|add|update|rm|status]", I18n::text("how_to_use"));
         }
     } else if args[1] == "contacts" {
         if args[2] == "list" {
