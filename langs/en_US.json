@@ -87,5 +87,7 @@
     "transactions_current_balance": "Current balance",
     "transactions_expeected_balance": "Expected balance",
     "transactions_merge_not_found_principal": "Principal transaction not found",
-    "transactions_merge_not_found_secondary": "Secondary transaction not found"
+    "transactions_merge_not_found_secondary": "Secondary transaction not found",
+    "transactions_how_to_use_calendar": "How to use: bmoney transactions calendar export [account id] [from] [to] > yourfile.ical",
+    "transactions_calendar_fail_print": "Fail on build the calendar output"
 }

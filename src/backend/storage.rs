@@ -122,6 +122,7 @@ impl Storage {
     }
 
     // Return struct for read the metadata section
+    #[allow(dead_code)]
     pub fn get_metadata(&mut self) -> Metadata {
         self.reopen_file();
 
@@ -312,6 +313,7 @@ impl<'a> Data<'a> {
 impl<'a> Metadata<'a> {
 
     // Return the value of key, if exists and is no empty, from the metadata
+    #[allow(dead_code)]
     pub fn get(self, key: &'static str) -> Option<String> {
 
         let meta_key = format!("::metadata::{} ", key.to_string());

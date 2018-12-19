@@ -19,3 +19,4 @@ dirs = "*"
 lazy-static-include = "*"
 lazy_static = "*"
 json-gettext = "*"
+icalendar = { git = "https://github.com/fernandobatels/icalendar-rs", version = "*" }

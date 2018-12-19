@@ -21,6 +21,7 @@ extern crate json_gettext;
 extern crate lazy_static;
 #[macro_use]
 extern crate lazy_static_include;
+extern crate icalendar;
 
 mod ui;
 mod backend;
@@ -112,8 +113,10 @@ fn main() {
             Transactions::ofx(storage, args[3..].to_vec());
         } else if args[2] == "merge" {
             Transactions::merge(storage, args[3..].to_vec());
+        } else if args[2] == "calendar" {
+            Transactions::calendar(storage, args[3..].to_vec());
         } else {
-            println!("{}: bmoney transactions [list|add|update|rm|ofx|merge]", I18n::text("how_to_use"));
+            println!("{}: bmoney transactions [list|add|update|rm|ofx|merge|calendar]", I18n::text("how_to_use"));
         }
     } else if args[1] == "tags" {
         if args[2] == "list" {
