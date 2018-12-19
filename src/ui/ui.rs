@@ -169,9 +169,7 @@ impl Input {
     }
 
     // Display the options and provide a interface to search him
-    fn select_options(mut label: String, is_required: bool, current_value: Option<String>, mut options: Vec<(String, String)>) -> String {
-
-        options.sort_by( | (_, a), (_, b) | a.cmp(&b) );
+    fn select_options(mut label: String, is_required: bool, current_value: Option<String>, options: Vec<(String, String)>) -> String {
 
         label.push_str(&I18n::text("options_avaliable"));
         label.push_str(&Input::str_for_display_options(options.clone(), None));
@@ -201,7 +199,7 @@ impl Input {
     }
 
     // Read a option from stdin
-    pub fn read_option(label: String, is_required: bool, current_value: Option<String>, options: Vec<(String, String)>) -> String {
+    pub fn read_option(label: String, is_required: bool, current_value: Option<String>, mut options: Vec<(String, String)>) -> String {
 
         if options.len() == 0 {
             if !is_required {
@@ -210,6 +208,8 @@ impl Input {
 
             panic!("{} {}", I18n::text("no_options_avaliable_for"), label);
         }
+
+        options.sort_by( | (_, a), (_, b) | a.cmp(&b) );
 
         let value = Input::select_options(label, is_required, current_value, options.clone());
 
@@ -229,7 +229,7 @@ impl Input {
     }
 
     // Read options from stdin
-    pub fn read_options(label: String, is_required: bool, current_value: Vec<String>, options: Vec<(String, String)>) -> Vec<String> {
+    pub fn read_options(label: String, is_required: bool, current_value: Vec<String>, mut options: Vec<(String, String)>) -> Vec<String> {
 
         if options.len() == 0 {
             if !is_required {
@@ -238,6 +238,8 @@ impl Input {
 
             panic!("{} {}", I18n::text("no_options_avaliable_for"), label);
         }
+
+        options.sort_by( | (_, a), (_, b) | a.cmp(&b) );
 
         let values = Input::select_options(label, is_required, None, options.clone());
 
