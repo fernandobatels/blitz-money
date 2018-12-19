@@ -1,5 +1,9 @@
 # Blitz Money - Application for personal financial control
 
+[![Build Status](https://travis-ci.org/fernandobatels/blitz-money.svg?branch=master)](https://travis-ci.org/fernandobatels/blitz-money)
+![](https://img.shields.io/github/license/fernandobatels/blitz-money.svg)
+![](https://img.shields.io/github/release/fernandobatels/blitz-money.svg)
+
 Inspired on KMyMoney, this application uses on single text file to persist the data, allow OFX files import and can register the future moves on google calendar for notify you.
 
 ### Features
