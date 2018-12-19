@@ -39,6 +39,12 @@ pub trait Model {
     fn to_save(self) -> (String, bool, JsonValue);
 }
 
+// Representation of a metadata section
+#[derive(Clone)]
+pub struct Metadata<'a> {
+    storage: &'a Storage
+}
+
 impl Storage {
 
     // Open, or reopen, the file for storage. Create a file for store all data, if does not alred exists
@@ -115,8 +121,15 @@ impl Storage {
         Data { section: name, storage: self, last_position: 0, need_find_section: true, can_recursive: true }
     }
 
+    // Return struct for read the metadata section
+    pub fn get_metadata(&mut self) -> Metadata {
+        self.reopen_file();
+
+        Metadata { storage: self }
+    }
+
     // Persist current lines on storage
-    pub fn persist(&mut self) {
+    fn persist(&mut self) {
 
         if self.file.as_ref().unwrap().set_len(0).is_err() {
             panic!("Couldn't reset storage file");
@@ -296,6 +309,31 @@ impl<'a> Data<'a> {
     }
 }
 
+impl<'a> Metadata<'a> {
+
+    // Return the value of key, if exists and is no empty, from the metadata
+    pub fn get(self, key: &'static str) -> Option<String> {
+
+        let meta_key = format!("::metadata::{} ", key.to_string());
+
+        for line in self.storage.lines.clone() {
+
+            if line.starts_with(&meta_key) {
+                let value = line.get(meta_key.chars().count()..line.chars().count())
+                                .unwrap()
+                                .trim()
+                                .to_string();
+
+                if !value.is_empty() {
+                    return Some(value);
+                }
+            }
+        }
+
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -460,5 +498,53 @@ mod tests {
 
         // uuid can't more finded
         assert!(!data.find_by_id(new_uuid));
+    }
+
+    #[test]
+    fn get_metadata() {
+
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+
+        // Creating the metadata
+        {
+            st.reopen_file();
+
+            st.file.as_ref().unwrap()
+                .write(b"::metadata::key2 my value\n::metadata::key3 my other value")
+                .expect("Couldn't write line on storage file");
+
+            // Force reopen the file on next read
+            st.file = None;
+        }
+
+        // Checking if all operations if ok..
+        {
+
+            let mut data = st.get_section_data("accounts".to_string());
+
+            data.save(TestModel { uuid: "".to_string(), name: "FIND ME!".to_string() });
+            let new_uuid = data.save(TestModel { uuid: "".to_string(), name: "FIND ME2!".to_string() });
+            data.save(TestModel { uuid: "".to_string(), name: "FIND ME3!".to_string() });
+
+            // Valid uuid
+            assert_eq!(new_uuid.len(), 36);
+
+            // If is finded
+            assert!(data.find_by_id(new_uuid.clone()));
+
+            let row = data.next::<TestModel>();
+
+            assert!(row.is_ok());
+
+            assert_eq!(row.clone().unwrap().uuid, new_uuid);
+            assert_eq!(row.unwrap().name, "FIND ME2!".to_string());
+        }
+
+        // Now we can test the metadata
+        let metadata = st.get_metadata();
+
+        assert_eq!(metadata.clone().get("key1"), None);
+        assert_eq!(metadata.clone().get("key2"), Some("my value".to_string()));
+        assert_eq!(metadata.get("key3"), Some("my other value".to_string()));
     }
 }
