@@ -7,3 +7,7 @@ The storage system of this application is based into a file with sections and li
 
 A section ends on the next start or if the file ends. Only uuid and json content in lines is allowed inside a sections. Before
 a fisrt section, any content is allowed like comments or descriptions.
+
+Metadata are supported and can store only strings
+
+::metadata::googlecalendarkey my key.....

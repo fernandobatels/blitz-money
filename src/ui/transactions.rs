@@ -15,6 +15,7 @@ use backend::contacts::Contact;
 use backend::tags::Tag;
 use backend::storage::Storage;
 use backend::ofx::Ofx;
+use backend::calendar::Calendar;
 use ui::ui::*;
 use i18n::*;
 
@@ -25,7 +26,7 @@ impl Transactions {
     // List of user transactions
     pub fn list(mut storage: Storage, mut params: Vec<String>, is_csv: bool) {
 
-        if params.len() == 1 || params.len() >= 3 {
+        if params.len() >= 1 {
 
             let account = Account::get_account(&mut storage, params[0].trim().to_string()).unwrap();
 
@@ -67,7 +68,7 @@ impl Transactions {
             let mut table = Output::new_table();
 
             if show_all {
-                table.set_titles(row![b->I18n::text("transactions_deadline"), b->I18n::text("transactions_description"), b->I18n::text("transactions_type"), b->I18n::text("transactions_value"), b->I18n::text("transactions_excpected_balance"), b->I18n::text("transactions_paidin"), b->I18n::text("transactions_balance"), b->I18n::text("transactions_contact"), b->I18n::text("transactions_tags"), b->"#id", b->I18n::text("transactions_byofx"), b->I18n::text("transactions_observation"), b->I18n::text("transactions_createdat"), b->I18n::text("transactions_lastupdate")]);
+                table.set_titles(row![b->I18n::text("transactions_deadline"), b->I18n::text("transactions_description"), b->I18n::text("transactions_type"), b->I18n::text("transactions_value"), b->I18n::text("transactions_excpected_balance"), b->I18n::text("transactions_paidin"), b->I18n::text("transactions_balance"), b->I18n::text("transactions_contact"), b->I18n::text("transactions_tags"), b->"#id", b->I18n::text("transactions_byofx"), b->I18n::text("transactions_observations"), b->I18n::text("transactions_createdat"), b->I18n::text("transactions_lastupdate")]);
             } else {
                 table.set_titles(row![b->I18n::text("transactions_deadline"), b->I18n::text("transactions_description"), b->I18n::text("transactions_type"), b->I18n::text("transactions_value"), b->I18n::text("transactions_excpected_balance"), b->I18n::text("transactions_paidin"), b->I18n::text("transactions_balance"), b->I18n::text("transactions_contact"), b->I18n::text("transactions_tags"), b->"#id", b->I18n::text("transactions_byofx")]);
             }
@@ -627,6 +628,35 @@ impl Transactions {
         } else {
             // Help mode
             println!("{}", I18n::text("transactions_how_to_use_merge"));
+        }
+    }
+
+    // Interface to export and import transactions to the stdout
+    pub fn calendar(mut storage: Storage, params: Vec<String>) {
+
+        if params.len() >= 2 && params[0] == "export" {
+
+            // Shell mode
+            let account = Account::get_account(&mut storage, params[1].trim().to_string()).unwrap();
+
+            let mut from = Local::now().with_day(1).unwrap().date().naive_local();
+            let mut to = (Local::now() + Duration::weeks(104)).date().naive_local();
+
+            if params.len() == 4 {
+                from = NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap();
+                to = NaiveDate::parse_from_str(&params[3].trim().to_string(), "%Y-%m-%d").unwrap();
+            }
+
+            let (transactions, _totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, StatusFilter::FORPAY, None);
+
+            let calendar = Calendar::export(transactions);
+
+            calendar.print()
+                .expect(&I18n::text("transactions_calendar_fail_print"));
+
+        } else {
+            // Help mode
+            println!("{}", I18n::text("transactions_how_to_use_calendar"));
         }
     }
 }
