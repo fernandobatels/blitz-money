@@ -40,7 +40,6 @@
     "transactions_description": "Transaction description",
     "transactions_not_found": "Transaction not found",
     "transactions_account": "Account",
-    "transactions_description": "Destination account",
     "transactions_caccount": "(account)",
     "transactions_lvalue": "Value(>= 0 for credit and < 0 for debit)",
     "transactions_value": "Value",
