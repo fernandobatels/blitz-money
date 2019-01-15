@@ -82,6 +82,8 @@
     "transactions_incomes_toreceive": "Incomes(to receive)",
     "transactions_expenses": "Expenses",
     "transactions_incomes": "Incomes",
+    "transactions_transfers_in": "Transfers in",
+    "transactions_transfers_out": "Transfers out",
     "transactions_previous_balance": "Previous balance",
     "transactions_current_balance": "Current balance",
     "transactions_expeected_balance": "Expected balance",

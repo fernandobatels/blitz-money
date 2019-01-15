@@ -292,12 +292,23 @@ impl Transaction {
         let mut list: Vec<Transaction> = vec![];
         let mut totals: Vec<Total> = vec![];
 
+        let i_tep = 0;
         totals.push(Total { label: I18n::text("transactions_expenses_payable"), value: 0.0 });
+        let i_tit = 1;
         totals.push(Total { label: I18n::text("transactions_incomes_toreceive"), value: 0.0 });
+        let i_te = 2;
         totals.push(Total { label: I18n::text("transactions_expenses"), value: 0.0 });
+        let i_ti = 3;
         totals.push(Total { label: I18n::text("transactions_incomes"), value: 0.0 });
+        let i_tfi = 4;
+        totals.push(Total { label: I18n::text("transactions_transfers_in"), value: 0.0 });
+        let i_tfo = 5;
+        totals.push(Total { label: I18n::text("transactions_transfers_out"), value: 0.0 });
+        let i_tpb = 6;
         totals.push(Total { label: I18n::text("transactions_previous_balance"), value: account.open_balance });
+        let i_tcb = 7;
         totals.push(Total { label: I18n::text("transactions_current_balance"), value: account.open_balance });
+        let i_teb = 8;
         totals.push(Total { label: I18n::text("transactions_expeected_balance"), value: account.open_balance });
 
         while let Ok(line) = data.next::<Transaction>() {
@@ -305,10 +316,10 @@ impl Transaction {
 
                 // Totals: Previous + Current balance
                 if line.paid_in.is_some() {
-                    totals[5].value += line.value;
+                    totals[i_tcb].value += line.value;
 
                     if line.deadline.unwrap() < from {
-                        totals[4].value += line.value;
+                        totals[i_tpb].value += line.value;
                     }
                 }
 
@@ -316,7 +327,7 @@ impl Transaction {
                 if line.deadline.unwrap() <= to {
                     // We cant sum the future transactions because the user can
                     // make scheduled transactions for nexts years
-                    totals[6].value += line.value;
+                    totals[i_teb].value += line.value;
                 }
 
                 // Period filter
@@ -328,11 +339,20 @@ impl Transaction {
 
                 if line.paid_in.is_some() {
 
-                    // Totals: Expenses + Incomes paids
-                    if line.value >= 0.0 {
-                        totals[3].value += line.value;
+                    if line.transfer.is_some() {
+                        // Totals: Transfer in + Transfers out
+                        if line.value >= 0.0 {
+                            totals[i_tfi].value += line.value;
+                        } else {
+                            totals[i_tfo].value += line.value;
+                        }
                     } else {
-                        totals[2].value += line.value;
+                        // Totals: Expenses + Incomes paids
+                        if line.value >= 0.0 {
+                            totals[i_ti].value += line.value;
+                        } else {
+                            totals[i_te].value += line.value;
+                        }
                     }
 
                     filter_status_ok = StatusFilter::PAID == filter_status || StatusFilter::ALL == filter_status;
@@ -340,9 +360,9 @@ impl Transaction {
 
                     // Totals: Expenses + Incomes payables
                     if line.value >= 0.0 {
-                        totals[1].value += line.value;
+                        totals[i_tit].value += line.value;
                     } else {
-                        totals[0].value += line.value;
+                        totals[i_tep].value += line.value;
                     }
 
                     filter_status_ok = StatusFilter::FORPAY == filter_status || StatusFilter::ALL == filter_status;
@@ -611,7 +631,7 @@ mod tests {
 
         assert_eq!(transactions_a.len(), 2);
 
-        assert_eq!(totals_a.len(), 7);
+        assert_eq!(totals_a.len(), 9);
         assert_eq!(totals_a[0].label, "Expenses(payable)".to_string());
         assert_eq!(totals_a[0].value, -125.53);
         assert_eq!(totals_a[1].label, "Incomes(to receive)".to_string());
@@ -620,12 +640,12 @@ mod tests {
         assert_eq!(totals_a[2].value, 0.0);
         assert_eq!(totals_a[3].label, "Incomes".to_string());
         assert_eq!(totals_a[3].value, 0.0);
-        assert_eq!(totals_a[4].label, "Previous balance".to_string());
-        assert_eq!(totals_a[4].value, 35.0);
-        assert_eq!(totals_a[5].label, "Current balance".to_string());
-        assert_eq!(totals_a[5].value, 35.0);
-        assert_eq!(totals_a[6].label, "Expected balance".to_string());
-        assert_eq!(totals_a[6].value, 78.490005);
+        assert_eq!(totals_a[6].label, "Previous balance".to_string());
+        assert_eq!(totals_a[6].value, 35.0);
+        assert_eq!(totals_a[7].label, "Current balance".to_string());
+        assert_eq!(totals_a[7].value, 35.0);
+        assert_eq!(totals_a[8].label, "Expected balance".to_string());
+        assert_eq!(totals_a[8].value, 78.490005);
 
         let mut paid = transactions_a[0].clone();
         paid.paid_in = Some(NaiveDate::parse_from_str("2018-10-25", "%Y-%m-%d").unwrap());
@@ -635,7 +655,7 @@ mod tests {
 
         assert_eq!(transactions_b.len(), 2);
 
-        assert_eq!(totals_b.len(), 7);
+        assert_eq!(totals_b.len(), 9);
         assert_eq!(totals_b[0].label, "Expenses(payable)".to_string());
         assert_eq!(totals_b[0].value, 0.0);
         assert_eq!(totals_b[1].label, "Incomes(to receive)".to_string());
@@ -644,18 +664,18 @@ mod tests {
         assert_eq!(totals_b[2].value, -125.53);
         assert_eq!(totals_b[3].label, "Incomes".to_string());
         assert_eq!(totals_b[3].value, 0.0);
-        assert_eq!(totals_b[4].label, "Previous balance".to_string());
-        assert_eq!(totals_b[4].value, 35.0);
-        assert_eq!(totals_b[5].label, "Current balance".to_string());
-        assert_eq!(totals_b[5].value, -90.53);
-        assert_eq!(totals_b[6].label, "Expected balance".to_string());
-        assert_eq!(totals_b[6].value, 78.490005);
+        assert_eq!(totals_b[6].label, "Previous balance".to_string());
+        assert_eq!(totals_b[6].value, 35.0);
+        assert_eq!(totals_b[7].label, "Current balance".to_string());
+        assert_eq!(totals_b[7].value, -90.53);
+        assert_eq!(totals_b[8].label, "Expected balance".to_string());
+        assert_eq!(totals_b[8].value, 78.490005);
 
         let (transactions_c, totals_c) = Transaction::get_transactions(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
 
         assert_eq!(transactions_c.len(), 1);
 
-        assert_eq!(totals_c.len(), 7);
+        assert_eq!(totals_c.len(), 9);
         assert_eq!(totals_c[0].label, "Expenses(payable)".to_string());
         assert_eq!(totals_c[0].value, 0.0);
         assert_eq!(totals_c[1].label, "Incomes(to receive)".to_string());
@@ -664,12 +684,12 @@ mod tests {
         assert_eq!(totals_c[2].value, 0.0);
         assert_eq!(totals_c[3].label, "Incomes".to_string());
         assert_eq!(totals_c[3].value, 0.0);
-        assert_eq!(totals_c[4].label, "Previous balance".to_string());
-        assert_eq!(totals_c[4].value, 0.0);
-        assert_eq!(totals_c[5].label, "Current balance".to_string());
-        assert_eq!(totals_c[5].value, 0.0);
-        assert_eq!(totals_c[6].label, "Expected balance".to_string());
-        assert_eq!(totals_c[6].value, 25.580002);
+        assert_eq!(totals_c[6].label, "Previous balance".to_string());
+        assert_eq!(totals_c[6].value, 0.0);
+        assert_eq!(totals_c[7].label, "Current balance".to_string());
+        assert_eq!(totals_c[7].value, 0.0);
+        assert_eq!(totals_c[8].label, "Expected balance".to_string());
+        assert_eq!(totals_c[8].value, 25.580002);
     }
 
     #[test]
@@ -705,7 +725,7 @@ mod tests {
 
         assert_eq!(transactions_a.len(), 3);
 
-        assert_eq!(totals_a.len(), 7);
+        assert_eq!(totals_a.len(), 9);
         assert_eq!(totals_a[1].label, "Incomes(to receive)".to_string());
         assert_eq!(totals_a[1].value, 30.0);
 
@@ -713,7 +733,7 @@ mod tests {
 
         assert_eq!(transactions_b.len(), 2);
 
-        assert_eq!(totals_b.len(), 7);
+        assert_eq!(totals_b.len(), 9);
         assert_eq!(totals_b[0].label, "Expenses(payable)".to_string());
         assert_eq!(totals_b[0].value, -20.0);
 
@@ -727,17 +747,21 @@ mod tests {
 
         assert_eq!(transactions_c.len(), 3);
 
-        assert_eq!(totals_c.len(), 7);
+        assert_eq!(totals_c.len(), 9);
         assert_eq!(totals_c[1].label, "Incomes(to receive)".to_string());
         assert_eq!(totals_c[1].value, 10.0);
+        assert_eq!(totals_c[4].label, "Transfers in".to_string());
+        assert_eq!(totals_c[4].value, 20.0);
 
         let (transactions_d, totals_d) = Transaction::get_transactions(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
 
         assert_eq!(transactions_d.len(), 2);
 
-        assert_eq!(totals_d.len(), 7);
+        assert_eq!(totals_d.len(), 9);
         assert_eq!(totals_d[0].label, "Expenses(payable)".to_string());
         assert_eq!(totals_d[0].value, 0.0);
+        assert_eq!(totals_d[5].label, "Transfers out".to_string());
+        assert_eq!(totals_d[5].value, -20.0);
     }
 
     #[test]
@@ -761,7 +785,7 @@ mod tests {
 
         assert_eq!(transactions_a.len(), 2);
 
-        assert_eq!(totals_a.len(), 7);
+        assert_eq!(totals_a.len(), 9);
         assert_eq!(totals_a[0].label, "Expenses(payable)".to_string());
         assert_eq!(totals_a[0].value, 0.0);
         assert_eq!(totals_a[1].label, "Incomes(to receive)".to_string());
@@ -770,18 +794,18 @@ mod tests {
         assert_eq!(totals_a[2].value, -125.53);
         assert_eq!(totals_a[3].label, "Incomes".to_string());
         assert_eq!(totals_a[3].value, 0.0);
-        assert_eq!(totals_a[4].label, "Previous balance".to_string());
-        assert_eq!(totals_a[4].value, 35.0);
-        assert_eq!(totals_a[5].label, "Current balance".to_string());
-        assert_eq!(totals_a[5].value, -90.53);
-        assert_eq!(totals_a[6].label, "Expected balance".to_string());
-        assert_eq!(totals_a[6].value, 78.490005);
+        assert_eq!(totals_a[6].label, "Previous balance".to_string());
+        assert_eq!(totals_a[6].value, 35.0);
+        assert_eq!(totals_a[7].label, "Current balance".to_string());
+        assert_eq!(totals_a[7].value, -90.53);
+        assert_eq!(totals_a[8].label, "Expected balance".to_string());
+        assert_eq!(totals_a[8].value, 78.490005);
 
         let (transactions_b, totals_b) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::PAID, None);
 
         assert_eq!(transactions_b.len(), 1);
 
-        assert_eq!(totals_b.len(), 7);
+        assert_eq!(totals_b.len(), 9);
         assert_eq!(totals_b[0].label, "Expenses(payable)".to_string());
         assert_eq!(totals_b[0].value, 0.0);
         assert_eq!(totals_b[1].label, "Incomes(to receive)".to_string());
@@ -790,18 +814,18 @@ mod tests {
         assert_eq!(totals_b[2].value, -125.53);
         assert_eq!(totals_b[3].label, "Incomes".to_string());
         assert_eq!(totals_b[3].value, 0.0);
-        assert_eq!(totals_b[4].label, "Previous balance".to_string());
-        assert_eq!(totals_b[4].value, 35.0);
-        assert_eq!(totals_b[5].label, "Current balance".to_string());
-        assert_eq!(totals_b[5].value, -90.53);
-        assert_eq!(totals_b[6].label, "Expected balance".to_string());
-        assert_eq!(totals_b[6].value, 78.490005);
+        assert_eq!(totals_b[6].label, "Previous balance".to_string());
+        assert_eq!(totals_b[6].value, 35.0);
+        assert_eq!(totals_b[7].label, "Current balance".to_string());
+        assert_eq!(totals_b[7].value, -90.53);
+        assert_eq!(totals_b[8].label, "Expected balance".to_string());
+        assert_eq!(totals_b[8].value, 78.490005);
 
         let (transactions_c, totals_c) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::FORPAY, None);
 
         assert_eq!(transactions_c.len(), 1);
 
-        assert_eq!(totals_c.len(), 7);
+        assert_eq!(totals_c.len(), 9);
         assert_eq!(totals_c[0].label, "Expenses(payable)".to_string());
         assert_eq!(totals_c[0].value, 0.0);
         assert_eq!(totals_c[1].label, "Incomes(to receive)".to_string());
@@ -810,12 +834,12 @@ mod tests {
         assert_eq!(totals_c[2].value, -125.53);
         assert_eq!(totals_c[3].label, "Incomes".to_string());
         assert_eq!(totals_c[3].value, 0.0);
-        assert_eq!(totals_c[4].label, "Previous balance".to_string());
-        assert_eq!(totals_c[4].value, 35.0);
-        assert_eq!(totals_c[5].label, "Current balance".to_string());
-        assert_eq!(totals_c[5].value, -90.53);
-        assert_eq!(totals_c[6].label, "Expected balance".to_string());
-        assert_eq!(totals_c[6].value, 78.490005);
+        assert_eq!(totals_c[6].label, "Previous balance".to_string());
+        assert_eq!(totals_c[6].value, 35.0);
+        assert_eq!(totals_c[7].label, "Current balance".to_string());
+        assert_eq!(totals_c[7].value, -90.53);
+        assert_eq!(totals_c[8].label, "Expected balance".to_string());
+        assert_eq!(totals_c[8].value, 78.490005);
     }
 
     #[test]
