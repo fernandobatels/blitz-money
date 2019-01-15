@@ -99,6 +99,24 @@ impl Ofx {
 
         transactions
     }
+
+    // Populate de index of transactions for use on
+    // ofx imports
+    pub fn index(storage: &mut Storage) {
+
+        let accounts = Account::get_accounts(storage);
+
+        for account in accounts {
+            let transactions = transactions::Transaction::get_transactions_simple(storage, account.clone());
+
+            for transaction in transactions {
+                if !transaction.ofx_fitid.is_empty() {
+                    let key = format!("fitid_{}", account.clone().uuid);
+                    storage.set_index("transactions".to_string(), key, transaction.ofx_fitid.clone(), transaction.uuid.clone());
+                }
+            }
+        }
+    }
 }
 
 impl Transaction {
@@ -111,7 +129,6 @@ impl Transaction {
         if let Some(transaction) = self.clone().find_transaction_by_fitid(storage, account) {
             return transaction;
         }
-
 
         transactions::Transaction {
             description: self.memo.clone(),
@@ -127,11 +144,14 @@ impl Transaction {
     // Get, if already exists, the trasaction by fitid
     fn find_transaction_by_fitid(self, storage: &mut Storage, account: Account) -> Option<transactions::Transaction> {
 
-        // TODO: Make and use 'index find' for this
-        let transactions = transactions::Transaction::get_transactions_simple(storage, account);
+        storage.start_section("transactions".to_string());
 
-        for transaction in transactions {
-            if transaction.ofx_fitid == self.fitid && transaction.ofx_memo == self.memo {
+        let mut data = storage.get_section_data("transactions".to_string());
+
+        let key = format!("fitid_{}", account.clone().uuid);
+
+        if data.find_by_index(key, self.fitid) {
+            if let Ok(transaction) = data.next::<transactions::Transaction>() {
                 return Some(transaction);
             }
         }

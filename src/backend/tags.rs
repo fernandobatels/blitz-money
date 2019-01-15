@@ -100,12 +100,14 @@ mod tests {
 
     use super::*;
     use uuid::Uuid;
+    use std::collections::HashMap;
+    use std::cell::RefCell;
 
     fn populate() -> String {
 
         let path = "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string();
 
-        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         assert!(st.start_section("tags".to_string()));
 
@@ -122,7 +124,7 @@ mod tests {
     #[test]
     fn get_tags() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let tags = Tag::get_tags(&mut st);
 
@@ -135,7 +137,7 @@ mod tests {
     #[test]
     fn get_tag() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let tags = Tag::get_tags(&mut st);
 
@@ -155,7 +157,7 @@ mod tests {
     #[test]
     fn store_tag() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         Tag::store_tag(&mut st, Tag { uuid: "".to_string(), name: "tag 5".to_string() });
 
@@ -168,7 +170,7 @@ mod tests {
     #[test]
     fn remove_tag() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let tags = Tag::get_tags(&mut st);
 

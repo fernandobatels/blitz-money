@@ -143,12 +143,14 @@ mod tests {
     use super::*;
     use uuid::Uuid;
     use chrono::Local;
+    use std::collections::HashMap;
+    use std::cell::RefCell;
 
     fn populate() -> String {
 
         let path = "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string();
 
-        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         assert!(st.start_section("accounts".to_string()));
 
@@ -165,7 +167,7 @@ mod tests {
     #[test]
     fn get_accounts() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let accounts = Account::get_accounts(&mut st);
 
@@ -197,7 +199,7 @@ mod tests {
     #[test]
     fn get_account() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let accounts = Account::get_accounts(&mut st);
 
@@ -220,7 +222,7 @@ mod tests {
     #[test]
     fn store_account() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         Account::store_account(&mut st, Account { uuid: "".to_string(), name: "account 5".to_string(), bank: "bank A".to_string(), currency: "R$".to_string(), open_balance: 0.0, open_balance_date: Some(Local::today().naive_local())  });
 
@@ -242,7 +244,7 @@ mod tests {
     #[test]
     fn remove_account() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let accounts = Account::get_accounts(&mut st);
 

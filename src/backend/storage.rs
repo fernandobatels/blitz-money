@@ -11,6 +11,8 @@ use std::fs::{ File, OpenOptions };
 use std::io::{ Read, Write };
 use std::path::Path;
 use std::option::Option;
+use std::collections::HashMap;
+use std::cell::RefCell;
 use json::{ parse, JsonValue };
 use uuid::Uuid;
 
@@ -19,6 +21,7 @@ pub struct Storage {
     pub path_str: String,
     pub file: Option<File>,
     pub lines: Vec<String>,
+    pub index: RefCell<HashMap<String, HashMap<String, String>>>
 }
 
 // Representation of section data
@@ -145,6 +148,25 @@ impl Storage {
         // Force reopen the file on next read
         // self.storage.file = None;
     }
+
+    // Storage on memory the position uuid indexed
+    // by key+value
+    pub fn set_index(&mut self, section: String, key: String, value: String, uuid: String) {
+
+        let skey = format!("{}_{}", section, key);
+
+        let mut index: HashMap<String, String>;
+
+        if let Some(current) = self.index.borrow_mut().get_mut(&skey) {
+            index = current.to_owned();
+        } else {
+            index = HashMap::new();
+        }
+
+        index.insert(value, uuid);
+
+        self.index.borrow_mut().insert(skey, index);
+    }
 }
 
 impl<'a> Data<'a> {
@@ -194,6 +216,24 @@ impl<'a> Data<'a> {
         }
 
         line.chars().take(36).collect::<String>() == uuid
+    }
+
+    // Find the next row by value on index system. If a valid index is
+    // founded the #find_by_id is called for you can run the #next method
+    pub fn find_by_index(&mut self, key: String, value: String) -> bool {
+
+        let skey = format!("{}_{}", self.section, key);
+
+        let index = self.storage.index.borrow().clone();
+
+        if let Some(group) = index.get(&skey) {
+            if let Some(uuid) = group.get(&value) {
+                self.find_by_id(uuid.to_string());
+                return true;
+            }
+        }
+
+        false
     }
 
     // Find the next row by the id. After this method is necessary
@@ -372,21 +412,21 @@ mod tests {
     #[test]
     fn check_section() {
 
-        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
         assert!(!st.check_section("accounts".to_string()));
     }
 
     #[test]
     fn start_section() {
 
-        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
         assert!(st.start_section("accounts".to_string()));
     }
 
     #[test]
     fn get_section_data() {
 
-        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         assert!(st.start_section("accounts".to_string()));
 
@@ -401,7 +441,7 @@ mod tests {
     #[test]
     fn save() {
 
-        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         assert!(st.start_section("accounts".to_string()));
 
@@ -427,7 +467,7 @@ mod tests {
 
         let path = "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string();
 
-        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         assert!(st.start_section("accounts".to_string()));
 
@@ -438,7 +478,7 @@ mod tests {
         assert!(data.next::<TestModel>().is_ok());
 
         // Load again
-        let mut st2 = Storage { path_str: path, file: None, lines: Vec::new() };
+        let mut st2 = Storage { path_str: path, file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         let mut data2 = st2.get_section_data("accounts".to_string());
 
@@ -453,7 +493,7 @@ mod tests {
     #[test]
     fn find_by_id() {
 
-        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         assert!(st.start_section("accounts".to_string()));
 
@@ -480,7 +520,7 @@ mod tests {
     #[test]
     fn remove_by_id() {
 
-        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         assert!(st.start_section("accounts".to_string()));
 
@@ -505,7 +545,7 @@ mod tests {
     #[test]
     fn get_metadata() {
 
-        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         // Creating the metadata
         {

@@ -28,6 +28,9 @@ mod backend;
 mod i18n;
 
 use std::env;
+use std::collections::HashMap;
+use std::cell::RefCell;
+use backend::ofx::Ofx;
 use ui::tags::Tags;
 use ui::accounts::Accounts;
 use ui::contacts::Contacts;
@@ -62,7 +65,9 @@ fn main() {
         path_str = home_dir_str.to_owned() + &"/.bmoney.bms".to_string();
     }
 
-    let storage = Storage { path_str: path_str, file: None, lines: Vec::new() };
+    let mut storage = Storage { path_str: path_str, file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
+
+    Ofx::index(&mut storage);
 
     if args.len() == 1 {
         // Without module and action

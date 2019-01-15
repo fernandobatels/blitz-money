@@ -525,6 +525,8 @@ mod tests {
 
     use super::*;
     use uuid::Uuid;
+    use std::collections::HashMap;
+    use std::cell::RefCell;
 
     fn populate() -> String {
 
@@ -532,7 +534,7 @@ mod tests {
 
         let path = "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string();
 
-        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         Account::store_account(&mut st, Account { uuid: "".to_string(), name: "account AA".to_string(), bank: "bank A".to_string(), currency: "R$".to_string(), open_balance: 0.0, open_balance_date: Some(Local::today().naive_local()) });
         Account::store_account(&mut st, Account { uuid: "".to_string(), name: "account BB".to_string(), bank: "bank B".to_string(), currency: "R$".to_string(), open_balance: 35.0, open_balance_date: Some(Local::today().naive_local()) });
@@ -587,7 +589,7 @@ mod tests {
     #[test]
     fn get_transactions() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         let accounts = Account::get_accounts(&mut st);
 
@@ -603,7 +605,7 @@ mod tests {
     #[test]
     fn get_transactions_simple() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         let accounts = Account::get_accounts(&mut st);
 
@@ -620,7 +622,7 @@ mod tests {
     #[test]
     fn get_transactions_totals() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         let accounts = Account::get_accounts(&mut st);
 
@@ -695,7 +697,7 @@ mod tests {
     #[test]
     fn transfers() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         let accounts = Account::get_accounts(&mut st);
 
@@ -767,7 +769,7 @@ mod tests {
     #[test]
     fn get_transactions_status() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         let accounts = Account::get_accounts(&mut st);
 
@@ -845,7 +847,7 @@ mod tests {
     #[test]
     fn get_transaction() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         let accounts = Account::get_accounts(&mut st);
 
@@ -868,7 +870,7 @@ mod tests {
     #[test]
     fn store_transaction() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         let accounts = Account::get_accounts(&mut st);
 
@@ -897,7 +899,7 @@ mod tests {
     #[test]
     fn remove_transaction() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new())  };
 
         let accounts = Account::get_accounts(&mut st);
 

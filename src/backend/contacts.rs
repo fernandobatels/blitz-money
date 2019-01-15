@@ -107,12 +107,14 @@ mod tests {
 
     use super::*;
     use uuid::Uuid;
+    use std::collections::HashMap;
+    use std::cell::RefCell;
 
     fn populate() -> String {
 
         let path = "/tmp/bmoney-".to_owned() + &Uuid::new_v4().to_string();
 
-        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         assert!(st.start_section("contacts".to_string()));
 
@@ -129,7 +131,7 @@ mod tests {
     #[test]
     fn get_contacts() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let contacts = Contact::get_contacts(&mut st);
 
@@ -146,7 +148,7 @@ mod tests {
     #[test]
     fn get_contact() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let contacts = Contact::get_contacts(&mut st);
 
@@ -167,7 +169,7 @@ mod tests {
     #[test]
     fn store_contact() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         Contact::store_contact(&mut st, Contact { uuid: "".to_string(), name: "contact 5".to_string(), city_location: "city E".to_string() });
 
@@ -182,7 +184,7 @@ mod tests {
     #[test]
     fn remove_contact() {
 
-        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let contacts = Contact::get_contacts(&mut st);
 

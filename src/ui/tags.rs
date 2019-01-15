@@ -115,6 +115,8 @@ mod tests {
     use super::*;
     use uuid::Uuid;
     use std::process::Command;
+    use std::collections::HashMap;
+    use std::cell::RefCell;
     use assert_cmd::prelude::*;
     use backend::storage::Data;
 
@@ -122,7 +124,7 @@ mod tests {
 
         let path = "/tmp/bmoney-ui-".to_owned() + &Uuid::new_v4().to_string();
 
-        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new() };
+        let mut st = Storage { path_str: path.clone(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
         let mut uuids: Vec<String> = vec![];
 
