@@ -4,4 +4,5 @@ pub mod tags;
 pub mod transactions;
 pub mod ofx;
 pub mod calendar;
+pub mod rules;
 pub mod storage;

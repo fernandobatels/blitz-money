@@ -385,10 +385,8 @@ impl Transactions {
                 let account_uuid = Input::param(I18n::text("transactions_account"), true, params.clone(), 2);
                 transaction.account = Some(Account::get_account(&mut storage, account_uuid).unwrap());
             } else if params[1] == "contact" {
-                let contact_uuid = Input::param(I18n::text("transactions_contact"), true, params.clone(), 2);
-                if transaction.transfer.is_some() {
-                    transaction.account = Some(Account::get_account(&mut storage, contact_uuid).unwrap());
-                } else {
+                if transaction.transfer.is_none() {
+                    let contact_uuid = Input::param(I18n::text("transactions_contact"), true, params.clone(), 2);
                     transaction.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
                 }
             } else if params[1] == "deadline" {

@@ -35,6 +35,7 @@ use ui::tags::Tags;
 use ui::accounts::Accounts;
 use ui::contacts::Contacts;
 use ui::transactions::Transactions;
+use ui::rules::Rules;
 use ui::ui::*;
 use backend::storage::Storage;
 use i18n::*;
@@ -135,8 +136,20 @@ fn main() {
         } else {
             println!("{}: bmoney tags [list|add|update|rm]", I18n::text("how_to_use"));
         }
+    } else if args[1] == "rules" {
+        if args[2] == "list" {
+            Rules::list(storage, args[3..].to_vec(), is_csv);
+        } else if args[2] == "add" {
+            Rules::add(storage, args[3..].to_vec());
+        } else if args[2] == "update" {
+            Rules::update(storage, args[3..].to_vec());
+        } else if args[2] == "rm" {
+            Rules::rm(storage, args[3..].to_vec());
+        } else {
+            println!("{}: bmoney rules [list|add|update|rm]", I18n::text("how_to_use"));
+        }
     } else {
-     println!("{}: bmoney [accounts|contacts|transactions|tags] [action]", I18n::text("how_to_use"));
+     println!("{}: bmoney [accounts|contacts|transactions|tags|rules] [action]", I18n::text("how_to_use"));
     }
 
 }
