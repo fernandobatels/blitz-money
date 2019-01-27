@@ -9,6 +9,7 @@
 use backend::storage::*;
 use backend::contacts::*;
 use backend::tags::*;
+use backend::transactions::*;
 use json::JsonValue;
 
 #[derive(Default, Clone, Debug)]
@@ -134,6 +135,27 @@ impl Rule {
         let mut data = storage.get_section_data("rules".to_string());
 
         data.remove_by_id(uuid);
+    }
+
+    // Check the description and apply the first rule with term match
+    pub fn apply_rules(storage: &mut Storage, transaction: &mut Transaction) -> bool {
+
+        let rules = Rule::get_rules(storage);
+
+        for rule in rules {
+            if transaction.description.to_lowercase().contains(rule.term.to_lowercase().as_str()) {
+
+                transaction.description = rule.description.clone();
+
+                transaction.contact = rule.contact.clone();
+
+                transaction.tags = rule.tags.clone();
+
+                return true;
+            }
+        }
+
+        false
     }
 }
 

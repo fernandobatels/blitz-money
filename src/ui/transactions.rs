@@ -16,6 +16,7 @@ use backend::tags::Tag;
 use backend::storage::Storage;
 use backend::ofx::Ofx;
 use backend::calendar::Calendar;
+use backend::rules::Rule;
 use ui::ui::*;
 use i18n::*;
 
@@ -511,10 +512,17 @@ impl Transactions {
 
             let account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
 
-            let mut auto_skip = false;
-            if Input::extract_param(&mut params, "--auto-skip".to_string()) {
-                auto_skip = true;
-            }
+            // Skip all already added transactions
+            let auto_skip = Input::extract_param(&mut params, "--auto-skip".to_string());
+
+            // Auto confirm the rule matches
+            let auto_confirm_rules = Input::extract_param(&mut params, "--auto-confirm-rules".to_string());
+
+            // Ignore all transactions without rules for him
+            let auto_skip_nomatches = Input::extract_param(&mut params, "--auto-skip-nomatches".to_string());
+
+            // Accept all new transactions without prompt
+            let auto_accept = Input::extract_param(&mut params, "--auto-accept".to_string());
 
 
             let mut contacts: Vec<(String, String)> = vec![];
@@ -554,14 +562,32 @@ impl Transactions {
                     }
                 }
 
-                if Input::read(question, false, None) != "y" {
-                    continue;
+                if !auto_accept {
+                    if Input::read(question, false, None) != "y" {
+                        continue;
+                    }
                 }
 
                 tr.account = Some(account.clone());
 
-                tr.description = Input::read(I18n::text("transactions_description"), true, Some(tr.description));
+                if tr.uuid.is_empty() {
+                    if Rule::apply_rules(&mut storage, &mut tr) {
+                        println!("{}", I18n::text("transactions_ofx_rule_matches"));
 
+                        if auto_confirm_rules && tr.contact.is_some() {
+                            println!("{}", I18n::text("transactions_ofx_auto_confirm"));
+                            let contact_uuid = tr.clone().contact.unwrap().uuid;
+
+                            Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
+                            continue;
+                        }
+                    } else if auto_skip_nomatches {
+                        println!("{}", I18n::text("transactions_ofx_skip_nomatches"));
+                        continue;
+                    }
+                }
+
+                tr.description = Input::read(I18n::text("transactions_description"), true, Some(tr.description));
 
                 let mut current_contact: Option<String> = None;
 
