@@ -224,12 +224,36 @@ mod tests {
 
         assert_eq!(rules[0].description, "rule 4".to_string());
         assert_eq!(rules[0].term, "term B".to_string());
-        assert_eq!(rules[0].contact.is_some(), true);
+        assert!(!rules[0].contact.is_some());
         assert_eq!(rules[0].tags.len(), 0);
 
         assert_eq!(rules[3].description, "rule 1".to_string());
         assert_eq!(rules[3].term, "term A".to_string());
-        assert_eq!(rules[3].contact.is_some(), false);
+        assert!(rules[3].contact.is_some());
         assert_eq!(rules[3].tags.len(), 0);
+    }
+
+    #[test]
+    fn apply_rules() {
+
+        let mut st = Storage { path_str: populate(), file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
+
+        let mut tr = Transaction {
+            description: "more term b and other".to_string(),
+            value: 150.0,
+            ..Default::default()
+        };
+
+        assert!(Rule::apply_rules(&mut st, &mut tr));
+
+        assert_eq!(tr.description, "rule 4".to_string());
+
+        let mut tr2 = Transaction {
+            description: "more term not found and other".to_string(),
+            value: 10.0,
+            ..Default::default()
+        };
+
+        assert!(!Rule::apply_rules(&mut st, &mut tr2));
     }
 }

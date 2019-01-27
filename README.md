@@ -12,7 +12,7 @@ Inspired on KMyMoney, this application uses on single text file to persist the d
 - [x] Financial transaction
 - [x] OFX import
 - [x] Google Calendar integration
-- [ ] Padronization of imported fields(contacts, tags...)
+- [x] Padronization of imported fields(contacts, tags...)
 - [ ] Reports
 - [ ] Simulations
 
