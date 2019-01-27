@@ -89,7 +89,7 @@
     "transactions_ofx_rule_matches": "One rule matches",
     "transactions_ofx_auto_confirm": "Auto confirm the rule...",
     "transactions_ofx_skip_nomatches": "Skiping the transaction without rule matches",
-    "transactions_how_to_use_ofx": "How to use: bmoney transactions ofx [account id] /path/to/file.ofx\nExtra arguments:\n\t--auto-skip, for skip already added transactions\n\t--auto-account, accept all new transactions without prompt\n\t--auto-confirm-rules, auto confirm the rule matches\n\t--auto-skip-nomatches, ignore all transactions without rules for him",
+    "transactions_how_to_use_ofx": "How to use: bmoney transactions ofx [account id] /path/to/file.ofx\nExtra arguments:\n\t--auto-skip, for skip already added transactions\n\t--auto-accept, accept all new transactions without prompt\n\t--auto-confirm-rules, auto confirm the rule matches\n\t--auto-skip-nomatches, ignore all transactions without rules for him",
     "transactions_expenses_payable": "Expenses(payable)",
     "transactions_incomes_toreceive": "Incomes(to receive)",
     "transactions_expenses": "Expenses",
