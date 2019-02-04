@@ -54,7 +54,7 @@ impl Transactions {
             }
 
             let mut from = Local::now().with_day(1).unwrap().date().naive_local();
-            let mut to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
+            let mut to = ((Local::now().with_day(1).unwrap() + Duration::days(32)).with_day(1).unwrap() - Duration::days(1)).date().naive_local();
 
             if params.len() == 3 {
                 from = NaiveDate::parse_from_str(&params[1].trim().to_string(), "%Y-%m-%d").unwrap();

@@ -9,7 +9,7 @@
 use backend::accounts::Account;
 use backend::storage::Storage;
 use ui::ui::*;
-use chrono::{Local, prelude::Datelike, NaiveDate};
+use chrono::{Local, prelude::Datelike, NaiveDate, Duration};
 use prettytable::{Row, Cell, Attr, color};
 use backend::transactions::Transaction;
 use backend::transactions::StatusFilter;
@@ -50,7 +50,7 @@ impl Accounts {
     pub fn status(mut storage: Storage, params: Vec<String>, is_csv: bool) {
 
         let mut from = Local::now().with_day(1).unwrap().date().naive_local();
-        let mut to = Local::now().with_day(30).unwrap().date().naive_local();// yes, fix to get last day of month
+        let mut to = ((Local::now().with_day(1).unwrap() + Duration::days(32)).with_day(1).unwrap() - Duration::days(1)).date().naive_local();
 
         if params.len() == 2 {
             from = NaiveDate::parse_from_str(&params[0].trim().to_string(), "%Y-%m-%d").unwrap();
