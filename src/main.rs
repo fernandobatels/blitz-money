@@ -30,7 +30,7 @@ mod i18n;
 use std::env;
 use std::collections::HashMap;
 use std::cell::RefCell;
-use backend::ofx::Ofx;
+use backend::import::Import;
 use ui::tags::Tags;
 use ui::accounts::Accounts;
 use ui::contacts::Contacts;
@@ -68,7 +68,7 @@ fn main() {
 
     let mut storage = Storage { path_str: path_str, file: None, lines: Vec::new(), index: RefCell::new(HashMap::new()) };
 
-    Ofx::index(&mut storage);
+    Import::index(&mut storage);
 
     if args.len() == 1 {
         // Without module and action
@@ -117,6 +117,8 @@ fn main() {
             Transactions::rm(storage, args[3..].to_vec());
         } else if args[2] == "ofx" {
             Transactions::ofx(storage, args[3..].to_vec());
+        } else if args[2] == "csv" {
+            Transactions::csv(storage, args[3..].to_vec());
         } else if args[2] == "merge" {
             Transactions::merge(storage, args[3..].to_vec());
         } else if args[2] == "calendar" {

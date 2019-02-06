@@ -14,7 +14,9 @@ use backend::accounts::Account;
 use backend::contacts::Contact;
 use backend::tags::Tag;
 use backend::storage::Storage;
-use backend::ofx::Ofx;
+use backend::import;
+use backend::import_ofx::ImportOfx;
+use backend::import_csv::ImportCsv;
 use backend::calendar::Calendar;
 use backend::rules::Rule;
 use ui::ui::*;
@@ -504,128 +506,160 @@ impl Transactions {
         }
     }
 
-    // Interface to import ofx files
-    pub fn ofx(mut storage: Storage, mut params: Vec<String>) {
+    // Interface to import csv
+    pub fn csv(mut storage: Storage, params: Vec<String>) {
+
+        if params.len() >= 6 {
+            // Shell mode
+
+            let account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
+
+            let mut csv = ImportCsv::new(params[1].to_owned(), params[2].to_owned())
+                .expect(&I18n::text("transactions_couldnt_open_csv"));
+
+            let pos_posted = params[3].parse::<usize>()
+                .expect(&I18n::text("couldnt_parse_the_string_to_integer"));
+            let pos_ammount = params[4].parse::<usize>()
+                .expect(&I18n::text("couldnt_parse_the_string_to_integer"));
+            let pos_memo = params[5].parse::<usize>()
+                .expect(&I18n::text("couldnt_parse_the_string_to_integer"));
+
+            let transactions = csv.get_transactions(pos_posted, pos_ammount, pos_memo);
+
+            Transactions::import_interface(storage, params, account, transactions);
+        } else {
+            // Help mode
+            println!("{}", I18n::text("transactions_how_to_use_csv"));
+        }
+    }
+
+    // Interface to import ofx
+    pub fn ofx(mut storage: Storage, params: Vec<String>) {
 
         if params.len() >= 2 {
             // Shell mode
 
             let account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
 
-            // Skip all already added transactions
-            let auto_skip = Input::extract_param(&mut params, "--auto-skip".to_string());
-
-            // Auto confirm the rule matches
-            let auto_confirm_rules = Input::extract_param(&mut params, "--auto-confirm-rules".to_string());
-
-            // Ignore all transactions without rules for him
-            let auto_skip_nomatches = Input::extract_param(&mut params, "--auto-skip-nomatches".to_string());
-
-            // Accept all new transactions without prompt
-            let auto_accept = Input::extract_param(&mut params, "--auto-accept".to_string());
-
-
-            let mut contacts: Vec<(String, String)> = vec![];
-            for co in Contact::get_contacts(&mut storage) {
-                contacts.push((co.uuid, co.name));
-            }
-            // For transfers
-            for account in Account::get_accounts(&mut storage) {
-                contacts.push((account.uuid, account.name + &I18n::text("transactions_caccount")));
-            }
-
-            let mut tags_ops: Vec<(String, String)> = vec![];
-            for tag in Tag::get_tags(&mut storage) {
-                tags_ops.push((tag.uuid, tag.name));
-            }
-
-            let ofx = Ofx::new(params[1].to_owned())
+            let ofx = ImportOfx::new(params[1].to_owned())
                 .expect(&I18n::text("transactions_couldnt_open_ofx"));
 
             let transactions = ofx.get_transactions();
 
-            for (i, ofx_tr) in transactions.iter().enumerate() {
-                println!("{} {}/{}", I18n::text("transactions_ofx_index"), i + 1, transactions.len());
-                println!("{} {} {}, memo: {}", I18n::text("transactions_ofx_on"), account.format_value(ofx_tr.amount), ofx_tr.posted_at.unwrap(), ofx_tr.memo);
-
-                let mut tr = ofx_tr.clone().build_transaction(&mut storage, account.clone());
-
-                let mut question = I18n::text("transactions_ofx_add_skip");
-
-                if !tr.uuid.is_empty() {
-                    println!("{} \"{}\" in {}", I18n::text("transactions_ofx_already"), tr.description, tr.created_at.unwrap());
-                    question = I18n::text("transactions_ofx_update_skip");
-
-                    if auto_skip {
-                        println!("{}", I18n::text("transactions_ofx_auto_skip"));
-                        continue;
-                    }
-                }
-
-                if !auto_accept {
-                    if Input::read(question, false, None) != "y" {
-                        continue;
-                    }
-                }
-
-                tr.account = Some(account.clone());
-
-                if tr.uuid.is_empty() {
-                    if Rule::apply_rules(&mut storage, &mut tr) {
-                        println!("{}", I18n::text("transactions_ofx_rule_matches"));
-
-                        if auto_confirm_rules && tr.contact.is_some() {
-                            println!("{}", I18n::text("transactions_ofx_auto_confirm"));
-                            let contact_uuid = tr.clone().contact.unwrap().uuid;
-
-                            Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
-                            continue;
-                        }
-                    } else if auto_skip_nomatches {
-                        println!("{}", I18n::text("transactions_ofx_skip_nomatches"));
-                        continue;
-                    }
-                }
-
-                tr.description = Input::read(I18n::text("transactions_description"), true, Some(tr.description));
-
-                let mut current_contact: Option<String> = None;
-
-                if let Some(contact) = tr.contact {
-                    current_contact = Some(contact.uuid);
-                }
-
-                let contact_uuid = Input::read_option(I18n::text("transactions_contact_or_other_account"), true, current_contact, contacts.clone());
-
-                tr.contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
-                    Ok(con) => Some(con),
-                    Err(_)  => None
-                };
-
-
-                let current_tags: Vec<String> = tr.tags.clone()
-                    .iter()
-                    .map(|tag| tag.uuid.clone())
-                    .collect();
-
-                tr.tags = Input::read_options(I18n::text("transactions_tags"), false, current_tags, tags_ops.clone())
-                    .iter()
-                    .map(
-                        |tag| Tag::get_tag(&mut storage, tag.to_string())
-                                    .expect(&I18n::text("tags_not_found"))
-                    )
-                    .collect();
-
-
-                tr.observations = Input::read(I18n::text("transactions_observations"), false, Some(tr.observations));
-
-                Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
-
-            }
-
+            Transactions::import_interface(storage, params, account, transactions);
         } else {
             // Help mode
             println!("{}", I18n::text("transactions_how_to_use_ofx"));
+        }
+    }
+
+    // Interface to import ofx/csv files
+    fn import_interface(mut storage: Storage, mut params: Vec<String>, account: Account, transactions: Vec<import::Transaction>) {
+
+        // Skip all already added transactions
+        let auto_skip = Input::extract_param(&mut params, "--auto-skip".to_string());
+
+        // Auto confirm the rule matches
+        let auto_confirm_rules = Input::extract_param(&mut params, "--auto-confirm-rules".to_string());
+
+        // Ignore all transactions without rules for him
+        let auto_skip_nomatches = Input::extract_param(&mut params, "--auto-skip-nomatches".to_string());
+
+        // Accept all new transactions without prompt
+        let auto_accept = Input::extract_param(&mut params, "--auto-accept".to_string());
+
+
+        let mut contacts: Vec<(String, String)> = vec![];
+        for co in Contact::get_contacts(&mut storage) {
+            contacts.push((co.uuid, co.name));
+        }
+        // For transfers
+        for account in Account::get_accounts(&mut storage) {
+            contacts.push((account.uuid, account.name + &I18n::text("transactions_caccount")));
+        }
+
+        let mut tags_ops: Vec<(String, String)> = vec![];
+        for tag in Tag::get_tags(&mut storage) {
+            tags_ops.push((tag.uuid, tag.name));
+        }
+
+        for (i, ofx_tr) in transactions.iter().enumerate() {
+            println!("{} {}/{}", I18n::text("transactions_ofx_index"), i + 1, transactions.len());
+            println!("{} {} {}, memo: {}", I18n::text("transactions_ofx_on"), account.format_value(ofx_tr.amount), ofx_tr.posted_at.unwrap(), ofx_tr.memo);
+
+            let mut tr = ofx_tr.clone().build_transaction(&mut storage, account.clone());
+
+            let mut question = I18n::text("transactions_ofx_add_skip");
+
+            if !tr.uuid.is_empty() {
+                println!("{} \"{}\" in {}", I18n::text("transactions_ofx_already"), tr.description, tr.created_at.unwrap());
+                question = I18n::text("transactions_ofx_update_skip");
+
+                if auto_skip {
+                    println!("{}", I18n::text("transactions_ofx_auto_skip"));
+                    continue;
+                }
+            }
+
+            if !auto_accept {
+                if Input::read(question, false, None) != "y" {
+                    continue;
+                }
+            }
+
+            tr.account = Some(account.clone());
+
+            if tr.uuid.is_empty() {
+                if Rule::apply_rules(&mut storage, &mut tr) {
+                    println!("{}", I18n::text("transactions_ofx_rule_matches"));
+
+                    if auto_confirm_rules && tr.contact.is_some() {
+                        println!("{}", I18n::text("transactions_ofx_auto_confirm"));
+                        let contact_uuid = tr.clone().contact.unwrap().uuid;
+
+                        Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
+                        continue;
+                    }
+                } else if auto_skip_nomatches {
+                    println!("{}", I18n::text("transactions_ofx_skip_nomatches"));
+                    continue;
+                }
+            }
+
+            tr.description = Input::read(I18n::text("transactions_description"), true, Some(tr.description));
+
+            let mut current_contact: Option<String> = None;
+
+            if let Some(contact) = tr.contact {
+                current_contact = Some(contact.uuid);
+            }
+
+            let contact_uuid = Input::read_option(I18n::text("transactions_contact_or_other_account"), true, current_contact, contacts.clone());
+
+            tr.contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
+                Ok(con) => Some(con),
+                Err(_)  => None
+            };
+
+
+            let current_tags: Vec<String> = tr.tags.clone()
+                .iter()
+                .map(|tag| tag.uuid.clone())
+                .collect();
+
+            tr.tags = Input::read_options(I18n::text("transactions_tags"), false, current_tags, tags_ops.clone())
+                .iter()
+                .map(
+                    |tag| Tag::get_tag(&mut storage, tag.to_string())
+                                .expect(&I18n::text("tags_not_found"))
+                )
+                .collect();
+
+
+            tr.observations = Input::read(I18n::text("transactions_observations"), false, Some(tr.observations));
+
+            Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
+
         }
     }
 
