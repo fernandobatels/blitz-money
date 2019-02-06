@@ -141,7 +141,7 @@ mod tests {
 
         let (path_str, _uuids) = populate();
 
-        let mut main = Command::main_binary().unwrap();
+        let mut main = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 
         main.arg("tags")
             .arg("add")
@@ -157,7 +157,7 @@ mod tests {
 
         let (path_str, uuids) = populate();
 
-        let mut main = Command::main_binary().unwrap();
+        let mut main = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 
         main.arg("tags")
             .arg("list")
