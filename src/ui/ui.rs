@@ -9,7 +9,7 @@
 use prettytable::*;
 use csv::*;
 use std::io;
-use chrono::{NaiveDate, Local};
+use chrono::{Local, prelude::Datelike, NaiveDate, Duration};
 use i18n::*;
 
 pub struct Output {
@@ -361,5 +361,29 @@ impl Input {
         }
 
         None
+    }
+
+    // Parse and return a period date from params
+    pub fn param_date_period(params: Vec<String>, from_position: usize, to_position: usize) -> (NaiveDate, NaiveDate) {
+
+        // Default: Current month
+        let mut from = Local::now().with_day(1).unwrap().date().naive_local();
+        let mut to = ((Local::now().with_day(1).unwrap() + Duration::days(32)).with_day(1).unwrap() - Duration::days(1)).date().naive_local();
+
+        if (params.len() - 1) == to_position {
+            // When user input full from and to dates
+
+            from = NaiveDate::parse_from_str(&params[from_position].trim().to_string(), "%Y-%m-%d").unwrap();
+            to = NaiveDate::parse_from_str(&params[to_position].trim().to_string(), "%Y-%m-%d").unwrap();
+
+        } else if (params.len() - 1) == from_position && params[from_position].len() == 7 {
+            // When user only input the year+month
+
+            from = NaiveDate::parse_from_str(&format!("{}-01", params[from_position]), "%Y-%m-%d").unwrap();
+            to = (from + Duration::days(32)).with_day(1).unwrap() - Duration::days(1);
+
+        }
+
+        (from, to)
     }
 }

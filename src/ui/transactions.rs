@@ -55,13 +55,7 @@ impl Transactions {
                 tag = Some(filter_tag);
             }
 
-            let mut from = Local::now().with_day(1).unwrap().date().naive_local();
-            let mut to = ((Local::now().with_day(1).unwrap() + Duration::days(32)).with_day(1).unwrap() - Duration::days(1)).date().naive_local();
-
-            if params.len() == 3 {
-                from = NaiveDate::parse_from_str(&params[1].trim().to_string(), "%Y-%m-%d").unwrap();
-                to = NaiveDate::parse_from_str(&params[2].trim().to_string(), "%Y-%m-%d").unwrap();
-            }
+            let (from, to) = Input::param_date_period(params, 1, 2);
 
             let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, tag);
 
