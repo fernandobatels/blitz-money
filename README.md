@@ -11,6 +11,7 @@ Inspired on KMyMoney, this application uses on single text file to persist the d
 - [x] Manage Accounts
 - [x] Financial transaction
 - [x] OFX import
+- [x] CSV import
 - [x] Google Calendar integration
 - [x] Padronization of imported fields(contacts, tags...)
 - [ ] Reports
@@ -30,7 +31,7 @@ git clone https://github.com/fernandobatels/blitz-money && cd blitz-money && car
 - You need a account and a contacts for start creating your transactions
 - The interactive mode('-i' option) is better for learning how to use the application
 - All data will be saved in ~/.bmoney.bms file. This means that you permissions file system is the responsible for keep the access controll.
-- All options for the modules can be visualized typing 'bmoney tags', 'bmoney contacts', 'bmoney accounts' and 'bmoney transactions'
+- All options for the modules can be visualized typing 'bmoney tags', 'bmoney contacts', 'bmoney accounts', 'bmoney rules' and 'bmoney transactions'
 - In all options 'list', like the 'accounts list', you can use the '--use-csv' for get the result in csv instead of a table
 
 ### Google calendar integration

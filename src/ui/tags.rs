@@ -161,15 +161,18 @@ mod tests {
 
         main.arg("tags")
             .arg("list")
-            .arg("--storage-file=".to_owned() + &path_str)
-            .arg("--use-csv");
+            .arg("--storage-file=".to_owned() + &path_str);
 
-        let mut stdout = String::from("\"Tag name\",\"#id\"\n");
+        let mut stdout = String::from("+----------+---------+\n");
 
-        stdout.push_str(&format!("\"tag 4\",\"{}\"\n", Data::uuid_to_id(uuids[3].clone())));
-        stdout.push_str(&format!("\"tag 3\",\"{}\"\n", Data::uuid_to_id(uuids[2].clone())));
-        stdout.push_str(&format!("\"tag 2\",\"{}\"\n", Data::uuid_to_id(uuids[1].clone())));
-        stdout.push_str(&format!("\"tag 1\",\"{}\"\n", Data::uuid_to_id(uuids[0].clone())));
+        stdout.push_str("| Tag name | #id     |\n");
+        stdout.push_str("+----------+---------+\n");
+
+        stdout.push_str(&format!("| tag 4    | {} |\n", Data::uuid_to_id(uuids[3].clone())));
+        stdout.push_str(&format!("| tag 3    | {} |\n", Data::uuid_to_id(uuids[2].clone())));
+        stdout.push_str(&format!("| tag 2    | {} |\n", Data::uuid_to_id(uuids[1].clone())));
+        stdout.push_str(&format!("| tag 1    | {} |\n", Data::uuid_to_id(uuids[0].clone())));
+        stdout.push_str("+----------+---------+\n");
 
         main.assert()
             .success()
