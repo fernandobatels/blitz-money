@@ -13,7 +13,7 @@ use backend::transactions::StatusFilter;
 use backend::accounts::Account;
 use backend::contacts::Contact;
 use backend::tags::Tag;
-use backend::storage::Storage;
+use backend::storage::{Storage, Data};
 use backend::import;
 use backend::import_ofx::ImportOfx;
 use backend::import_csv::ImportCsv;
@@ -35,6 +35,7 @@ impl Transactions {
 
             let show_all = Input::extract_param(&mut params, "--show-all".to_string());
 
+            let show_mergeds = Input::extract_param(&mut params, "--show-mergeds".to_string());
 
             let mut status = StatusFilter::ALL;
 
@@ -57,18 +58,26 @@ impl Transactions {
 
             let (from, to) = Input::param_date_period(params, 1, 2);
 
-            let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, tag);
+            let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, tag, show_mergeds);
 
-            let mut balance = totals[4].value.clone(); // Previous Balance
-            let mut expected_balance = totals[4].value.clone(); // Previous Balance
+            let mut balance = totals[6].value.clone(); // Previous Balance
+            let mut expected_balance = totals[6].value.clone(); // Previous Balance
 
             let mut table = Output::new_table();
 
+            let mut header = row![b->I18n::text("transactions_deadline"), b->I18n::text("transactions_description"), b->I18n::text("transactions_type"), b->I18n::text("transactions_value"), b->I18n::text("transactions_excpected_balance"), b->I18n::text("transactions_paidin"), b->I18n::text("transactions_balance"), b->I18n::text("transactions_contact"), b->I18n::text("transactions_tags"), b->"#id", b->I18n::text("transactions_byofx")];
+
             if show_all {
-                table.set_titles(row![b->I18n::text("transactions_deadline"), b->I18n::text("transactions_description"), b->I18n::text("transactions_type"), b->I18n::text("transactions_value"), b->I18n::text("transactions_excpected_balance"), b->I18n::text("transactions_paidin"), b->I18n::text("transactions_balance"), b->I18n::text("transactions_contact"), b->I18n::text("transactions_tags"), b->"#id", b->I18n::text("transactions_byofx"), b->I18n::text("transactions_observations"), b->I18n::text("transactions_createdat"), b->I18n::text("transactions_lastupdate")]);
-            } else {
-                table.set_titles(row![b->I18n::text("transactions_deadline"), b->I18n::text("transactions_description"), b->I18n::text("transactions_type"), b->I18n::text("transactions_value"), b->I18n::text("transactions_excpected_balance"), b->I18n::text("transactions_paidin"), b->I18n::text("transactions_balance"), b->I18n::text("transactions_contact"), b->I18n::text("transactions_tags"), b->"#id", b->I18n::text("transactions_byofx")]);
+                header.add_cell(cell!(b->I18n::text("transactions_observations")));
+                header.add_cell(cell!(b->I18n::text("transactions_createdat")));
+                header.add_cell(cell!(b->I18n::text("transactions_lastupdate")));
+                header.add_cell(cell!(b->I18n::text("transactions_merged_in")));
+                header.add_cell(cell!(b->I18n::text("transactions_repetitions_previous")));
+                header.add_cell(cell!(b->I18n::text("transactions_ofx_fitid")));
+                header.add_cell(cell!(b->I18n::text("transactions_ofx_memo")));
             }
+
+            table.set_titles(header);
 
             for transaction in transactions {
 
@@ -82,10 +91,12 @@ impl Transactions {
                     by_ofx = "Yes".to_string();
                 }
 
-                if transaction.paid_in.is_some() {
-                    balance += transaction.value;
+                if transaction.merged_in.is_empty() {
+                    if transaction.paid_in.is_some() {
+                        balance += transaction.value;
+                    }
+                    expected_balance += transaction.value;
                 }
-                expected_balance += transaction.value;
 
                 let mut row = table.add_row(row![
                     transaction.deadline.unwrap(),
@@ -133,20 +144,31 @@ impl Transactions {
                 if show_all {
                     row.add_cell(cell!(transaction.observations));
                     row.add_cell(cell!(transaction.created_at.unwrap()));
+
                     if transaction.updated_at.is_some() {
                         row.add_cell(cell!(transaction.updated_at.unwrap()));
                     } else {
                         row.add_cell(cell!(""));
                     }
+
+                    if !transaction.merged_in.is_empty() {
+                        row.add_cell(cell!(Data::uuid_to_id(transaction.merged_in)));
+                    } else {
+                        row.add_cell(cell!(""));
+                    }
+
+                    if !transaction.previous_repetition.is_empty() {
+                        row.add_cell(cell!(Data::uuid_to_id(transaction.previous_repetition)));
+                    } else {
+                        row.add_cell(cell!(""));
+                    }
+
+                    row.add_cell(cell!(transaction.ofx_fitid));
+                    row.add_cell(cell!(transaction.ofx_memo));
                 }
             }
 
-
-            if show_all {
-                table.add_row(row!["", "", "", "", "", "", "", "", "", "", "", "", "", ""]);
-            } else {
-                table.add_row(row!["", "", "", "", "", "", "", "", "", "", ""]);
-            }
+            table.add_row(prettytable::Row::empty());
 
             for total in totals {
 
@@ -155,13 +177,6 @@ impl Transactions {
                     b->total.label,
                     "",
                     Fg->account.format_value(total.value),
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    ""
                 ]);
 
                 if total.value < 0.0 {
@@ -169,11 +184,6 @@ impl Transactions {
                         .expect(&I18n::text("transactions_unable_to_set_total"));
                 }
 
-                if show_all {
-                    row.add_cell(cell!(""));
-                    row.add_cell(cell!(""));
-                    row.add_cell(cell!(""));
-                }
             }
 
             Output::print_table(table, is_csv);
@@ -579,7 +589,7 @@ impl Transactions {
 
         for (i, ofx_tr) in transactions.iter().enumerate() {
             println!("{} {}/{}", I18n::text("transactions_ofx_index"), i + 1, transactions.len());
-            println!("{} {} {}, memo: {}", I18n::text("transactions_ofx_on"), account.format_value(ofx_tr.amount), ofx_tr.posted_at.unwrap(), ofx_tr.memo);
+            println!("{} {} {}, memo: {}", account.format_value(ofx_tr.amount), I18n::text("transactions_ofx_on"), ofx_tr.posted_at.unwrap(), ofx_tr.memo);
 
             let mut tr = ofx_tr.clone().build_transaction(&mut storage, account.clone());
 
@@ -699,7 +709,7 @@ impl Transactions {
                 to = NaiveDate::parse_from_str(&params[3].trim().to_string(), "%Y-%m-%d").unwrap();
             }
 
-            let (transactions, _totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, StatusFilter::FORPAY, None);
+            let (transactions, _totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, StatusFilter::FORPAY, None, false);
 
             let calendar = Calendar::export(transactions);
 

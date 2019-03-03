@@ -35,6 +35,7 @@ impl Output {
         if is_csv {
             let wtr = WriterBuilder::new()
                 .quote_style(QuoteStyle::NonNumeric)
+                .flexible(true)
                 .from_writer(io::stdout());
 
             table.to_csv_writer(wtr)

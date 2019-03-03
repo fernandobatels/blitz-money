@@ -284,7 +284,7 @@ impl Transaction {
     }
 
     // Return a list with all transactions, except the mergeds, of account and totals, with more filters
-    pub fn get_transactions(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, filter_status: StatusFilter, filter_tag: Option<Tag>) -> (Vec<Transaction>, Vec<Total>) {
+    pub fn get_transactions(storage: &mut Storage, account: Account, from: NaiveDate, to: NaiveDate, filter_status: StatusFilter, filter_tag: Option<Tag>, show_mergeds: bool) -> (Vec<Transaction>, Vec<Total>) {
 
         storage.start_section("transactions".to_string());
 
@@ -382,6 +382,9 @@ impl Transaction {
                     }
                 }
 
+                list.push(line);
+            } else if account.uuid == line.account.clone().unwrap().uuid && !line.merged_in.is_empty() && show_mergeds {
+                // Merged transactions will be not considered in totals
                 list.push(line);
             }
         }

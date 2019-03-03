@@ -59,6 +59,7 @@
     "transactions_observations": "Observations",
     "transactions_repetitions": "Repetitions of the transaction",
     "transactions_repetitions_interval": "Interval in days of repetitions",
+    "transactions_repetitions_previous": "Previous repetition",
     "transactions_type": "Type",
     "transactions_excpected_balance": "Expected balance",
     "transactions_balance": "Balance",
@@ -70,7 +71,7 @@
     "transactions_how_to_use_update": "How to use: bmoney transactions update [id] [description|value|account|contact|deadline|paid|tags|observations] [value]\nOr with interactive mode: bmoney transactions update -i\nOr for pay mode: bmoney transactions update [id] pay [\"\"|YYYY-MM-DD|unpaid|today](optional) [new_value](optional)",
     "transactions_how_to_use_rm": "How to use: bmoney transactions rm [id]",
     "transactions_how_to_use_merge": "How to use: bmoney transactions merge [principal transaction id] [secondary transaction id]",
-    "transactions_how_to_use_list": "How to use: bmoney transactions list [account id] ([from] [to]|[year-month])\nExtra arguments:\n\t--tag=id of your tag, for filter by a specific tag\n\t--only-forpay, for show only transactions that need to be paid\n\t--only-paid, for show only paid transactions\n\t--show-all, for show observations and more columns on registers",
+    "transactions_how_to_use_list": "How to use: bmoney transactions list [account id] ([from] [to]|[year-month])\nExtra arguments:\n\t--tag=id of your tag, for filter by a specific tag\n\t--only-forpay, for show only transactions that need to be paid\n\t--only-paid, for show only paid transactions\n\t--show-all, for show observations and more columns on registers\n\t--show-mergeds, for show merged registers",
     "transactions_unable_to_set_d": "Unable to set D on transaction",
     "transactions_unable_to_set_value": "Unable to set value on transaction",
     "transactions_unable_to_set_expected_balance": "Unable to set expected balance on transaction",
@@ -82,6 +83,8 @@
     "transactions_couldnt_open_ofx": "Couldn't open the ofx file",
     "transactions_ofx_index": "Transaction",
     "transactions_ofx_on": "on",
+    "transactions_ofx_fitid": "Ofx fitid",
+    "transactions_ofx_memo": "Ofx memo",
     "transactions_ofx_add_skip": "Add(y) or skip(n)?",
     "transactions_ofx_update_skip": "Update(y) or skip(n)?",
     "transactions_ofx_auto_skip": "Auto skiping...",
@@ -103,6 +106,7 @@
     "transactions_expeected_balance": "Expected balance",
     "transactions_merge_not_found_principal": "Principal transaction not found",
     "transactions_merge_not_found_secondary": "Secondary transaction not found",
+    "transactions_merged_in": "Merged in",
     "transactions_how_to_use_calendar": "How to use: bmoney transactions calendar export [account id] [from] [to] > yourfile.ical",
     "transactions_calendar_fail_print": "Fail on build the calendar output"
 }
