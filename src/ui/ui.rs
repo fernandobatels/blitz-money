@@ -105,9 +105,11 @@ impl Input {
     // Read a money value from stdin
     pub fn read_money(mut label: String, is_required: bool, current_value: Option<f32>, currency: String) -> f32 {
 
-        label.push_str("(");
-        label.push_str(&currency);
-        label.push_str(")");
+        if !currency.is_empty() {
+            label.push_str("(");
+            label.push_str(&currency);
+            label.push_str(")");
+        }
 
         let mut current:Option<String> = None;
         if current_value.is_some() {

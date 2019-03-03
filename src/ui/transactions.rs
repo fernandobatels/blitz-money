@@ -511,12 +511,15 @@ impl Transactions {
     }
 
     // Interface to import csv
-    pub fn csv(mut storage: Storage, params: Vec<String>) {
+    pub fn csv(mut storage: Storage, mut params: Vec<String>) {
 
         if params.len() >= 6 {
             // Shell mode
 
             let account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
+
+            // Invert +/- of values
+            let invert_values = Input::extract_param(&mut params, "--invert-values".to_string());
 
             let mut csv = ImportCsv::new(params[1].to_owned(), params[2].to_owned())
                 .expect(&I18n::text("transactions_couldnt_open_csv"));
@@ -528,7 +531,7 @@ impl Transactions {
             let pos_memo = params[5].parse::<usize>()
                 .expect(&I18n::text("couldnt_parse_the_string_to_integer"));
 
-            let transactions = csv.get_transactions(pos_posted, pos_ammount, pos_memo);
+            let transactions = csv.get_transactions(pos_posted, pos_ammount, pos_memo, invert_values);
 
             Transactions::import_interface(storage, params, account, transactions);
         } else {
@@ -538,17 +541,20 @@ impl Transactions {
     }
 
     // Interface to import ofx
-    pub fn ofx(mut storage: Storage, params: Vec<String>) {
+    pub fn ofx(mut storage: Storage, mut params: Vec<String>) {
 
         if params.len() >= 2 {
             // Shell mode
 
             let account = Account::get_account(&mut storage, params[0].to_owned()).unwrap();
 
+            // Invert +/- of values
+            let invert_values = Input::extract_param(&mut params, "--invert-values".to_string());
+
             let ofx = ImportOfx::new(params[1].to_owned())
                 .expect(&I18n::text("transactions_couldnt_open_ofx"));
 
-            let transactions = ofx.get_transactions();
+            let transactions = ofx.get_transactions(invert_values);
 
             Transactions::import_interface(storage, params, account, transactions);
         } else {

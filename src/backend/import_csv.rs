@@ -30,7 +30,7 @@ impl ImportCsv {
     }
 
     // Get all transactions of CSV file
-    pub fn get_transactions(&mut self, pos_posted: usize, pos_ammount: usize, pos_memo: usize) -> Vec<Transaction> {
+    pub fn get_transactions(&mut self, pos_posted: usize, pos_amount: usize, pos_memo: usize, invert_values: bool) -> Vec<Transaction> {
         let mut transactions: Vec<Transaction> = vec![];
 
         for result in self.file_csv.records() {
@@ -41,17 +41,25 @@ impl ImportCsv {
                 let dtposted = NaiveDate::parse_from_str(sposted, "%Y-%m-%d")
                                 .expect("Cant't parse the posted at date");
 
-                let sammount = row.get(pos_ammount)
-                                .expect("Can't find the ammount column");
-                let ammount = sammount.replace(",", ".").parse::<f32>()
-                                .expect("Can't parse the ammount value");
+                let samount = row.get(pos_amount)
+                                .expect("Can't find the amount column");
+                let mut amount = samount.replace(",", ".").parse::<f32>()
+                                .expect("Can't parse the amount value");
+
+                if invert_values {
+                    if amount >= 0.0 {
+                        amount = 0.0 - amount;
+                    } else {
+                        amount = amount.abs();
+                    }
+                }
 
                 let memo = row.get(pos_memo)
                                 .expect("Can't find the memo column");
 
                 transactions.push(Transaction {
                     posted_at: Some(dtposted),
-                    amount: ammount,
+                    amount: amount,
                     fitid: format!("{}-{}", sposted, memo.to_string()),
                     memo: memo.to_string()
                 });

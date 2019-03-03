@@ -50,7 +50,7 @@ impl ImportOfx {
     }
 
     // Get all transactions of OFX file
-    pub fn get_transactions(&self) -> Vec<Transaction> {
+    pub fn get_transactions(&self, invert_values: bool) -> Vec<Transaction> {
         let mut transactions: Vec<Transaction> = vec![];
 
         let tran_list = self.file_doc
@@ -78,9 +78,19 @@ impl ImportOfx {
                     .expect("Can't find MEMO element")
                     .clone().text.unwrap();
 
+                let mut amount = trnamt.parse::<f32>().unwrap();
+
+                if invert_values {
+                    if amount >= 0.0 {
+                        amount = 0.0 - amount;
+                    } else {
+                        amount = amount.abs();
+                    }
+                }
+
                 transactions.push(Transaction {
                     posted_at: Some(NaiveDate::parse_from_str(&dtposted.chars().take(8).collect::<String>(), "%Y%m%d").unwrap()),
-                    amount: trnamt.parse::<f32>().unwrap(),
+                    amount: amount,
                     fitid: fitid,
                     memo: memo
                 });

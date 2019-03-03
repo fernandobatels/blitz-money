@@ -4,7 +4,7 @@ name = "bmoney"
 description = "Blitz Money - Application for personal financial control"
 repository = "https://github.com/fernandobatels/blitz-money"
 homepage = "https://github.com/fernandobatels/blitz-money"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Luis Fernando Batels <luisfbatels@gmail.com>"]
 
 [dependencies]

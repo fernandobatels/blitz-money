@@ -604,7 +604,7 @@ mod tests {
 
         assert_eq!(accounts[0].name, "account BB".to_string());
 
-        let (transactions, _total) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions, _total) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions.len(), 2);
         assert_eq!(transactions[0].description, "transaction 2".to_string());
@@ -638,7 +638,7 @@ mod tests {
         assert_eq!(accounts[0].name, "account BB".to_string());
         assert_eq!(accounts[1].name, "account AA".to_string());
 
-        let (transactions_a, totals_a) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions_a, totals_a) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions_a.len(), 2);
 
@@ -662,7 +662,7 @@ mod tests {
         paid.paid_in = Some(NaiveDate::parse_from_str("2018-10-25", "%Y-%m-%d").unwrap());
         Transaction::store_transaction(&mut st, paid);
 
-        let (transactions_b, totals_b) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions_b, totals_b) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions_b.len(), 2);
 
@@ -682,7 +682,7 @@ mod tests {
         assert_eq!(totals_b[8].label, "Total balance".to_string());
         assert_eq!(totals_b[8].value, -90.53);
 
-        let (transactions_c, totals_c) = Transaction::get_transactions(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions_c, totals_c) = Transaction::get_transactions(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions_c.len(), 1);
 
@@ -732,7 +732,7 @@ mod tests {
 
         Transaction::store_transfer(&mut st, &mut from, &mut to);
 
-        let (transactions_a, totals_a) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions_a, totals_a) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions_a.len(), 3);
 
@@ -740,7 +740,7 @@ mod tests {
         assert_eq!(totals_a[3].label, "Incomes(to receive)".to_string());
         assert_eq!(totals_a[3].value, 30.0);
 
-        let (transactions_b, totals_b) = Transaction::get_transactions(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions_b, totals_b) = Transaction::get_transactions(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions_b.len(), 2);
 
@@ -754,7 +754,7 @@ mod tests {
         paid.paid_in = Some(NaiveDate::parse_from_str("2018-10-19", "%Y-%m-%d").unwrap());
         Transaction::store_transfer(&mut st, &mut paid.clone(), &mut paid.transfer.unwrap());
 
-        let (transactions_c, totals_c) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions_c, totals_c) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions_c.len(), 3);
 
@@ -764,7 +764,7 @@ mod tests {
         assert_eq!(totals_c[5].label, "Transfers in".to_string());
         assert_eq!(totals_c[5].value, 20.0);
 
-        let (transactions_d, totals_d) = Transaction::get_transactions(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions_d, totals_d) = Transaction::get_transactions(&mut st, accounts[1].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions_d.len(), 2);
 
@@ -784,7 +784,7 @@ mod tests {
 
         assert_eq!(accounts[0].name, "account BB".to_string());
 
-        let (transactions_tmp, _totals) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions_tmp, _totals) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions_tmp.len(), 2);
 
@@ -792,7 +792,7 @@ mod tests {
         paid.paid_in = Some(NaiveDate::parse_from_str("2018-10-25", "%Y-%m-%d").unwrap());
         Transaction::store_transaction(&mut st, paid);
 
-        let (transactions_a, totals_a) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions_a, totals_a) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions_a.len(), 2);
 
@@ -812,7 +812,7 @@ mod tests {
         assert_eq!(totals_a[8].label, "Total balance".to_string());
         assert_eq!(totals_a[8].value, -90.53);
 
-        let (transactions_b, totals_b) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::PAID, None);
+        let (transactions_b, totals_b) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::PAID, None, false);
 
         assert_eq!(transactions_b.len(), 1);
 
@@ -832,7 +832,7 @@ mod tests {
         assert_eq!(totals_b[8].label, "Total balance".to_string());
         assert_eq!(totals_b[8].value, -90.53);
 
-        let (transactions_c, totals_c) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::FORPAY, None);
+        let (transactions_c, totals_c) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::FORPAY, None, false);
 
         assert_eq!(transactions_c.len(), 1);
 
@@ -862,7 +862,7 @@ mod tests {
 
         assert_eq!(accounts[0].name, "account BB".to_string());
 
-        let (transactions, _total) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions, _total) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         let uuid = transactions[0].uuid.clone();
 
@@ -898,7 +898,7 @@ mod tests {
             ..Default::default()
         });
 
-        let (transactions, _total) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions, _total) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         assert_eq!(transactions[0].description, "transaction 5".to_string());
         assert_eq!(transactions[1].description, "transaction 2".to_string());
@@ -914,7 +914,7 @@ mod tests {
 
         assert_eq!(accounts[0].name, "account BB".to_string());
 
-        let (transactions, _total) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None);
+        let (transactions, _total) = Transaction::get_transactions(&mut st, accounts[0].clone(), NaiveDate::parse_from_str("2018-10-01", "%Y-%m-%d").unwrap(), NaiveDate::parse_from_str("2018-10-31", "%Y-%m-%d").unwrap(), StatusFilter::ALL, None, false);
 
         let uuid = transactions[0].uuid.clone();
 

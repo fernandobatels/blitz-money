@@ -23,7 +23,7 @@ impl Rules {
         let rules = Rule::get_rules(&mut storage);
         let mut table = Output::new_table();
 
-        table.set_titles(row![b->I18n::text("rules_term"), b->I18n::text("rules_description"), b->I18n::text("rules_contact"), b->I18n::text("rules_tags"), b->"#id"]);
+        table.set_titles(row![b->I18n::text("rules_term"), b->I18n::text("rules_expected_value"), b->I18n::text("rules_description"), b->I18n::text("rules_contact"), b->I18n::text("rules_tags"), b->"#id"]);
 
         for rule in rules {
 
@@ -34,14 +34,20 @@ impl Rules {
 
             let mut row = table.add_row(row![
                 rule.term,
+                "",
                 rule.description,
                 "",
                 tags.join(", "),
                 rule.clone().id()
             ]);
 
+            if rule.expected_value.is_some() {
+                row.set_cell(cell!(rule.expected_value.unwrap()), 1)
+                    .expect(&I18n::text("rules_unable_to_set_expected_value"));
+            }
+
             if rule.contact.is_some() {
-                row.set_cell(cell!(rule.contact.clone().unwrap().name), 2)
+                row.set_cell(cell!(rule.contact.clone().unwrap().name), 3)
                     .expect(&I18n::text("rules_unable_to_set_contact"));
             }
         }
@@ -56,9 +62,16 @@ impl Rules {
             // Shell mode
 
             let term = Input::param(I18n::text("rules_term"), true, params.clone(), 0);
-            let description = Input::param(I18n::text("rules_description"), true, params.clone(), 1);
 
-            let contact_uuid = Input::param(I18n::text("rules_contact"), false, params.clone(), 2);
+            let mut expected_value: Option<f32> = None;
+            let get_expected = Input::param_money(I18n::text("rules_expected_value"), false, params.clone(), 1);
+            if get_expected != 0.0 {
+                expected_value = Some(get_expected);
+            }
+
+            let description = Input::param(I18n::text("rules_description"), true, params.clone(), 2);
+
+            let contact_uuid = Input::param(I18n::text("rules_contact"), false, params.clone(), 3);
 
             let contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
                 Ok(con) => Some(con),
@@ -81,6 +94,7 @@ impl Rules {
             Rule::store_rule(&mut storage, Rule {
                 uuid: "".to_string(),
                 description: description,
+                expected_value: expected_value.clone(),
                 term: term,
                 contact: contact.clone(),
                 tags: tags
@@ -89,6 +103,13 @@ impl Rules {
             // Interactive mode
 
             let term = Input::read(I18n::text("rules_term"), true, None);
+
+            let mut expected_value: Option<f32> = None;
+            let get_expected = Input::read_money(I18n::text("rules_expected_value"), false, None, "".to_string());
+            if get_expected != 0.0 {
+                expected_value = Some(get_expected);
+            }
+
             let description = Input::read(I18n::text("rules_description"), true, None);
 
             let mut contacts: Vec<(String, String)> = vec![];
@@ -119,6 +140,7 @@ impl Rules {
             Rule::store_rule(&mut storage, Rule {
                 uuid: "".to_string(),
                 description: description,
+                expected_value: expected_value.clone(),
                 term: term,
                 contact: contact.clone(),
                 tags: tags
@@ -143,6 +165,13 @@ impl Rules {
                 rule.term = Input::param(I18n::text("rules_term"), true, params.clone(), 2);
             } else if params[1] == "description" {
                 rule.description = Input::param(I18n::text("rules_description"), true, params.clone(), 2);
+            } else if params[1] == "expected" {
+                let get_expected = Input::param_money(I18n::text("rules_expected_value"), false, params.clone(), 2);
+                if get_expected != 0.0 {
+                    rule.expected_value = Some(get_expected);
+                } else {
+                    rule.expected_value = None;
+                }
             } else if params[1] == "contact" {
                 let contact_uuid = Input::param(I18n::text("rules_contact"), true, params.clone(), 2);
                 rule.contact = Some(Contact::get_contact(&mut storage, contact_uuid).unwrap());
@@ -174,6 +203,14 @@ impl Rules {
                 .expect(&I18n::text("rules_not_found"));
 
             rule.term = Input::read(I18n::text("rules_term"), true, Some(rule.term));
+
+            let get_expected = Input::read_money(I18n::text("rules_expected_value"), false, rule.expected_value, "".to_string());
+            if get_expected != 0.0 {
+                rule.expected_value = Some(get_expected);
+            } else {
+                rule.expected_value = None;
+            }
+
             rule.description = Input::read(I18n::text("rules_description"), true, Some(rule.description));
 
             let mut contacts: Vec<(String, String)> = vec![];

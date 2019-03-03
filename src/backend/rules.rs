@@ -16,6 +16,7 @@ use json::JsonValue;
 pub struct Rule {
    pub uuid: String,
    pub term: String,
+   pub expected_value: Option<f32>,
    pub description: String,
    pub contact: Option<Contact>,
    pub tags: Vec<Tag>
@@ -36,10 +37,15 @@ impl Model for Rule {
         let mut rule = Rule {
             uuid: uuid,
             term: row["term"].to_string(),
+            expected_value: None,
             description: row["description"].to_string(),
             contact: None,
             tags: vec!()
         };
+
+        if !row["expected_value"].is_empty() {
+            rule.expected_value = Some(row["expected_value"].as_f32().unwrap());
+        }
 
         if !row["contact"].is_empty() {
             rule.contact = Some(Contact::get_contact(storage, row["contact"].to_string()).unwrap());
@@ -65,6 +71,10 @@ impl Model for Rule {
 
         if self.contact.is_some() {
             ob["contact"] = self.contact.unwrap().uuid.into();
+        }
+
+        if  self.expected_value.is_some() {
+            ob["expected_value"] = self.expected_value.unwrap().into();
         }
 
         if self.tags.len() > 0 {
@@ -145,6 +155,12 @@ impl Rule {
         for rule in rules {
             if transaction.description.to_lowercase().contains(rule.term.to_lowercase().as_str()) {
 
+                if rule.expected_value.is_some() {
+                    if rule.expected_value.unwrap() != transaction.value {
+                        continue;
+                    }
+                }
+
                 transaction.description = rule.description.clone();
 
                 transaction.contact = rule.contact.clone();
@@ -187,6 +203,7 @@ mod tests {
             uuid: "".to_string(),
             description: "rule 1".to_string(),
             term: "term A".to_string(),
+            expected_value: None,
             contact: Some(contacts[0].clone()),
             tags: vec!()
         });
@@ -194,6 +211,7 @@ mod tests {
             uuid: "".to_string(),
             description: "rule 2".to_string(),
             term: "term B".to_string(),
+            expected_value: None,
             contact: Some(contacts[1].clone()),
             tags: vec!()
         });
@@ -201,6 +219,7 @@ mod tests {
             uuid: "".to_string(),
             description: "rule 3".to_string(),
             term: "term D".to_string(),
+            expected_value: None,
             contact: Some(contacts[1].clone()),
             tags: vec!()
         });
@@ -208,6 +227,7 @@ mod tests {
             uuid: "".to_string(),
             description: "rule 4".to_string(),
             term: "term B".to_string(),
+            expected_value: None,
             contact: None,
             tags: vec!()
         });
