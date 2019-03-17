@@ -578,6 +578,9 @@ impl Transactions {
         // Accept all new transactions without prompt
         let auto_accept = Input::extract_param(&mut params, "--auto-accept".to_string());
 
+        // Enable option to choice for merge instead of create a new transaction
+        let enable_merge = Input::extract_param(&mut params, "--enable-merge".to_string());
+
 
         let mut contacts: Vec<(String, String)> = vec![];
         for co in Contact::get_contacts(&mut storage) {
@@ -591,6 +594,21 @@ impl Transactions {
         let mut tags_ops: Vec<(String, String)> = vec![];
         for tag in Tag::get_tags(&mut storage) {
             tags_ops.push((tag.uuid, tag.name));
+        }
+
+        let mut transactions_for_merge: Vec<(String, String)> = vec![];
+        if enable_merge {
+
+            // -1 month
+            let from = (Local::now().with_day(1).unwrap() - Duration::days(1)).with_day(1).unwrap().date().naive_local();
+            // +1 month
+            let to = ((Local::now().with_day(1).unwrap() + Duration::days(64)).with_day(1).unwrap() - Duration::days(1)).date().naive_local();
+
+            let (trs, _) = Transaction::get_transactions(&mut storage, account.clone(), from, to, StatusFilter::FORPAY, None, false);
+
+            for tr in trs {
+                transactions_for_merge.push((tr.clone().uuid, format!("{} {} - {}", tr.deadline.unwrap(), tr.value_formmated(), tr.description)));
+            }
         }
 
         for (i, ofx_tr) in transactions.iter().enumerate() {
@@ -632,6 +650,42 @@ impl Transactions {
                     }
                 } else if auto_skip_nomatches {
                     println!("{}", I18n::text("transactions_ofx_skip_nomatches"));
+                    continue;
+                }
+            }
+
+            if enable_merge {
+
+                if Input::read(I18n::text("transactions_ofx_merge"), false, None) == "y" {
+
+                    let principal_uuid = Input::read_option(I18n::text("transactions_ofx_mergethis"), true, None, transactions_for_merge.clone());
+
+                    let mut principal = Transaction::get_transaction(&mut storage, principal_uuid)
+                        .expect(&I18n::text("transactions_merge_not_found_principal"));
+
+                    let mut contact_uuid = String::new();
+
+                    if principal.transfer.is_some() {
+                        contact_uuid = principal.clone().transfer.unwrap().account.unwrap().uuid.clone();
+                    } else if tr.contact.is_none() {
+                        tr.contact = principal.clone().contact.clone();
+                        contact_uuid = principal.clone().contact.unwrap().uuid.clone();
+                    }
+
+                    tr.merged_in = principal.clone().uuid;
+
+                    Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
+
+                    // Update the original transaction to avoid problems
+                    principal.paid_in = Some(Local::today().naive_local());
+                    principal.value = tr.value;
+
+                    if tr.transfer.is_some() {
+                        Transaction::store_transfer(&mut storage, &mut tr.clone(), &mut tr.transfer.unwrap());
+                    } else {
+                        Transaction::store_transaction(&mut storage, principal);
+                    }
+
                     continue;
                 }
             }

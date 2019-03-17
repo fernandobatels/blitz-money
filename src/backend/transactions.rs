@@ -383,7 +383,7 @@ impl Transaction {
                 }
 
                 list.push(line);
-            } else if account.uuid == line.account.clone().unwrap().uuid && !line.merged_in.is_empty() && show_mergeds {
+            } else if account.uuid == line.account.clone().unwrap().uuid && !line.merged_in.is_empty() && show_mergeds && line.deadline.unwrap() >= from && line.deadline.unwrap() <= to {
                 // Merged transactions will be not considered in totals
                 list.push(line);
             }
