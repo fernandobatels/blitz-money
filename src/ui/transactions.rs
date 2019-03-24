@@ -207,7 +207,8 @@ impl Transactions {
             let mut tags: Vec<Tag> = vec!();
             let observations: String;
             let mut repetitions;
-            let mut repetitions_interval;
+            let mut repetitions_specific_day: bool = false;
+            let mut repetitions_interval: i32 = 0;
 
             if params.len() >= 5 {
                 // Shell mode
@@ -238,7 +239,8 @@ impl Transactions {
                 observations = Input::param(I18n::text("transactions_observations"), false, params.clone(), 7);
 
                 repetitions = Input::param_int(I18n::text("transactions_repetitions"), false, params.clone(), 8);
-                repetitions_interval = Input::param_int(I18n::text("transactions_repetitions_interval"), false, params.clone(), 9);
+                repetitions_specific_day = Input::param(I18n::text("transactions_repetitions_specific_day"), false, params.clone(), 9) == "y";
+                repetitions_interval = Input::param_int(I18n::text("transactions_repetitions_interval"), false, params.clone(), 10);
 
             } else {
                 // Interactive mode
@@ -287,7 +289,11 @@ impl Transactions {
                 repetitions = Input::read_int(I18n::text("transactions_repetitions"), false, None);
                 if repetitions > 0 {
                     // We only ask the interval if the user input the repetitions...
-                    repetitions_interval = Input::read_int(I18n::text("transactions_repetitions_interval"), false, None);
+                    repetitions_specific_day = Input::read(I18n::text("transactions_repetitions_specific_day"), false, None) == "y";
+                    if !repetitions_specific_day {
+                        // We only ask the interval if the user choice for repetitions
+                        repetitions_interval = Input::read_int(I18n::text("transactions_repetitions_interval"), false, None);
+                    }
                 } else {
                     repetitions_interval = 0;
                 }
@@ -328,12 +334,26 @@ impl Transactions {
 
                 let tr_uuid = Transaction::make_transaction_or_transfer(&mut storage, &mut mov, contact_uuid.clone());
 
-                let duration = Duration::days(repetitions_interval.into());
+                if repetitions_specific_day {
+                    // Go to first day of this month and jump 32 days to get the next
+                    mov_template.deadline = Some(mov_template.deadline.unwrap().with_day(1).unwrap() + Duration::days(32));
+                    // Now we set the day of month
+                    mov_template.deadline = Some(mov_template.deadline.unwrap().with_day(deadline.unwrap().day()).unwrap());
 
-                mov_template.deadline = Some(mov_template.deadline.unwrap() + duration);
+                    if mov_template.paid_in.is_some() {
+                        // Go to first day of this month and jump 32 days to get the next
+                        mov_template.paid_in = Some(mov_template.paid_in.unwrap().with_day(1).unwrap() + Duration::days(32));
+                        // Now we set the day of month
+                        mov_template.paid_in = Some(mov_template.paid_in.unwrap().with_day(paid_in.unwrap().day()).unwrap());
+                    }
+                } else {
+                    let duration = Duration::days(repetitions_interval.into());
 
-                if mov_template.paid_in.is_some() {
-                    mov_template.paid_in = Some(mov_template.paid_in.unwrap() + duration);
+                    mov_template.deadline = Some(mov_template.deadline.unwrap() + duration);
+
+                    if mov_template.paid_in.is_some() {
+                        mov_template.paid_in = Some(mov_template.paid_in.unwrap() + duration);
+                    }
                 }
 
                 mov_template.previous_repetition = tr_uuid;
