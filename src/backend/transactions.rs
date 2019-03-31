@@ -306,9 +306,11 @@ impl Transaction {
         totals.push(Total { label: I18n::text("transactions_transfers_in"), value: 0.0 });
         let i_tpb = 6;
         totals.push(Total { label: I18n::text("transactions_previous_balance"), value: account.open_balance });
-        let i_teb = 7;
+        let i_tpeb = 7;
+        totals.push(Total { label: I18n::text("transactions_previous_expected_balance"), value: account.open_balance });
+        let i_teb = 8;
         totals.push(Total { label: I18n::text("transactions_expeected_balance"), value: account.open_balance });
-        let i_tcb = 8;
+        let i_tcb = 9;
         totals.push(Total { label: I18n::text("transactions_current_balance"), value: account.open_balance });
 
         while let Ok(line) = data.next::<Transaction>() {
@@ -341,6 +343,11 @@ impl Transaction {
                     if line.deadline.unwrap() < from {
                         totals[i_tpb].value += line.value;
                     }
+                }
+
+                // Totals: Previous expected balance
+                if line.deadline.unwrap() < from {
+                    totals[i_tpeb].value += line.value;
                 }
 
                 // Totals: Expected balance

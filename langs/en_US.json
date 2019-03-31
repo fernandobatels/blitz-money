@@ -107,6 +107,7 @@
     "transactions_transfers_in": "Transfers in",
     "transactions_transfers_out": "Transfers out",
     "transactions_previous_balance": "Previous balance",
+    "transactions_previous_expected_balance": "Previous expected balance",
     "transactions_current_balance": "Total balance",
     "transactions_expeected_balance": "Expected balance",
     "transactions_merge_not_found_principal": "Principal transaction not found",

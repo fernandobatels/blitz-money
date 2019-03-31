@@ -61,7 +61,7 @@ impl Transactions {
             let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, tag, show_mergeds);
 
             let mut balance = totals[6].value.clone(); // Previous Balance
-            let mut expected_balance = totals[6].value.clone(); // Previous Balance
+            let mut expected_balance = totals[7].value.clone(); // Previous Expected Balance
 
             let mut table = Output::new_table();
 
