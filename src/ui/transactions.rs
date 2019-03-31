@@ -8,8 +8,7 @@
 
 use chrono::{Local, prelude::Datelike, NaiveDate, Duration};
 
-use backend::transactions::Transaction;
-use backend::transactions::StatusFilter;
+use backend::transactions::{Transaction, StatusFilter, T_PREVIOUS_BALANCE, T_PREVIOUS_EXPECTED_BALANCE};
 use backend::accounts::Account;
 use backend::contacts::Contact;
 use backend::tags::Tag;
@@ -60,8 +59,8 @@ impl Transactions {
 
             let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, tag, show_mergeds);
 
-            let mut balance = totals[6].value.clone(); // Previous Balance
-            let mut expected_balance = totals[7].value.clone(); // Previous Expected Balance
+            let mut balance = totals[T_PREVIOUS_BALANCE].value.clone(); // Previous Balance
+            let mut expected_balance = totals[T_PREVIOUS_EXPECTED_BALANCE].value.clone(); // Previous Expected Balance
 
             let mut table = Output::new_table();
 
