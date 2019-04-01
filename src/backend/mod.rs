@@ -7,4 +7,5 @@ pub mod import_ofx;
 pub mod import_csv;
 pub mod calendar;
 pub mod rules;
+pub mod forecasts;
 pub mod storage;

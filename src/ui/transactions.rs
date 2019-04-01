@@ -8,7 +8,7 @@
 
 use chrono::{Local, prelude::Datelike, NaiveDate, Duration};
 
-use backend::transactions::{Transaction, StatusFilter, T_PREVIOUS_BALANCE, T_PREVIOUS_EXPECTED_BALANCE};
+use backend::transactions::{Transaction, StatusFilter, T_PREVIOUS_BALANCE, T_PREVIOUS_EXPECTED_BALANCE, T_EXPECTED_BALANCE, T_EXPENSES_PAYABLE, T_INCOMES_TORECEIVE};
 use backend::accounts::Account;
 use backend::contacts::Contact;
 use backend::tags::Tag;
@@ -18,6 +18,7 @@ use backend::import_ofx::ImportOfx;
 use backend::import_csv::ImportCsv;
 use backend::calendar::Calendar;
 use backend::rules::Rule;
+use backend::forecasts::Forecast;
 use ui::ui::*;
 use i18n::*;
 
@@ -35,6 +36,8 @@ impl Transactions {
             let show_all = Input::extract_param(&mut params, "--show-all".to_string());
 
             let show_mergeds = Input::extract_param(&mut params, "--show-mergeds".to_string());
+
+            let show_forecasts = Input::extract_param(&mut params, "--show-forecasts".to_string());
 
             let mut status = StatusFilter::ALL;
 
@@ -57,7 +60,19 @@ impl Transactions {
 
             let (from, to) = Input::param_date_period(params, 1, 2);
 
-            let (transactions, totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, tag, show_mergeds);
+            let (mut transactions, mut totals) = Transaction::get_transactions(&mut storage, account.clone(), from, to, status, tag, show_mergeds);
+
+            if show_forecasts {
+                for tr in Forecast::remaining_transactions(&mut storage, transactions.clone(), to) {
+                    transactions.push(tr.clone());
+                    totals[T_EXPECTED_BALANCE].value += tr.value;
+                    if tr.value >= 0.0 {
+                        totals[T_INCOMES_TORECEIVE].value += tr.value;
+                    } else {
+                        totals[T_EXPENSES_PAYABLE].value += tr.value;
+                    }
+                }
+            }
 
             let mut balance = totals[T_PREVIOUS_BALANCE].value.clone(); // Previous Balance
             let mut expected_balance = totals[T_PREVIOUS_EXPECTED_BALANCE].value.clone(); // Previous Expected Balance
@@ -78,12 +93,9 @@ impl Transactions {
 
             table.set_titles(header);
 
-            for transaction in transactions {
+            for mut transaction in transactions {
 
-                let tags: Vec<String> = transaction.tags
-                    .iter()
-                    .map(|tag| tag.name.clone())
-                    .collect();
+                let mut tags: Vec<String> = vec![];
 
                 let mut by_ofx = "No".to_string();
                 if !transaction.ofx_fitid.is_empty() {
@@ -95,6 +107,18 @@ impl Transactions {
                         balance += transaction.value;
                     }
                     expected_balance += transaction.value;
+                }
+
+                if !show_all && transaction.description.chars().count() > 50 {
+                    transaction.description = format!("{}...", transaction.description[..50].to_string());
+                }
+
+                for tag in transaction.clone().tags {
+                    if !show_all && tag.name.chars().count() > 30 {
+                        tags.push(format!("{}...", tag.name[..30].to_string()));
+                    } else {
+                        tags.push(tag.name);
+                    }
                 }
 
                 let mut row = table.add_row(row![
@@ -136,7 +160,11 @@ impl Transactions {
                     row.set_cell(cell!(transaction.transfer.unwrap().account.clone().unwrap().name + &I18n::text("transactions_caccount")), 7)
                         .expect(&I18n::text("transactions_unable_to_set_account"));
                 } else {
-                    row.set_cell(cell!(transaction.contact.clone().unwrap().name), 7)
+                    let mut contact = transaction.contact.clone().unwrap().name;
+                    if !show_all && contact.chars().count() > 30 {
+                        contact = format!("{}...", contact[..30].to_string());
+                    }
+                    row.set_cell(cell!(contact), 7)
                         .expect(&I18n::text("transactions_unable_to_set_contact"));
                 }
 
