@@ -644,12 +644,15 @@ impl Transactions {
         }
 
         let mut transactions_for_merge: Vec<(String, String)> = vec![];
-        if enable_merge {
 
-            // -1 month
-            let from = (Local::now().with_day(1).unwrap() - Duration::days(1)).with_day(1).unwrap().date().naive_local();
-            // +1 month
-            let to = ((Local::now().with_day(1).unwrap() + Duration::days(64)).with_day(1).unwrap() - Duration::days(1)).date().naive_local();
+        // -1 month
+        let from = (Local::now().with_day(1).unwrap() - Duration::days(1)).with_day(1).unwrap().date().naive_local();
+        // +1 month
+        let to = ((Local::now().with_day(1).unwrap() + Duration::days(64)).with_day(1).unwrap() - Duration::days(1)).date().naive_local();
+
+        let (current_transfers, _) = Transaction::get_transactions(&mut storage, account.clone(), from, to, StatusFilter::PAID, None, false);
+
+        if enable_merge {
 
             let (trs, _) = Transaction::get_transactions(&mut storage, account.clone(), from, to, StatusFilter::FORPAY, None, false);
 
@@ -745,9 +748,9 @@ impl Transactions {
                 current_contact = Some(contact.uuid);
             }
 
-            let contact_uuid = Input::read_option(I18n::text("transactions_contact_or_other_account"), true, current_contact, contacts.clone());
+            let other_account_uuid = Input::read_option(I18n::text("transactions_contact_or_other_account"), true, current_contact, contacts.clone());
 
-            tr.contact = match Contact::get_contact(&mut storage, contact_uuid.clone()) {
+            tr.contact = match Contact::get_contact(&mut storage, other_account_uuid.clone()) {
                 Ok(con) => Some(con),
                 Err(_)  => None
             };
@@ -769,7 +772,22 @@ impl Transactions {
 
             tr.observations = Input::read(I18n::text("transactions_observations"), false, Some(tr.observations));
 
-            Transaction::make_transaction_or_transfer(&mut storage, &mut tr, contact_uuid);
+            // When we have a other transaction, in this account, with same value, 
+            // deadline and is a transfer from the same other account we merge the 
+            // new transaction in the old to avoid transactions duplication
+            if tr.contact.is_none() {
+                for trf in current_transfers.clone() {
+                    if trf.deadline == tr.deadline && trf.value == tr.value {
+                        if let Some(trftra) = trf.transfer {
+                            if trftra.account.unwrap().uuid == other_account_uuid {
+                                tr.merged_in = trf.uuid;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Transaction::make_transaction_or_transfer(&mut storage, &mut tr, other_account_uuid);
 
         }
     }
